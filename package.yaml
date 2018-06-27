@@ -1,0 +1,19 @@
+name: hive
+version: 0.0.1
+author: Brandon Chinn
+
+ghc-options: -Wall -Werror
+
+library:
+  source-dirs: src
+  dependencies:
+    base:
+    grid:
+
+executables:
+  play-hive:
+    main: Main.hs
+    source-dirs: exe
+    dependencies:
+      base:
+      hive:

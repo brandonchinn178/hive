@@ -1,0 +1,7 @@
+resolver: lts-11.11
+
+packages:
+- .
+
+extra-deps:
+- grid-7.8.9
