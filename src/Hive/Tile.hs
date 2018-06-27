@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Hive.Tile
   ( Tile(..)
   , TileType(..)
@@ -9,7 +11,13 @@ import Hive.Player (Player)
 data Tile = Tile
   { owner :: Player
   , kind :: TileType
+  , coordinates :: (Int, Int)
   }
+
+instance Show Tile where
+  show Tile{..} = unlines
+    [ ""
+    ]
 
 -- | The type of each tile on the board.
 data TileType
