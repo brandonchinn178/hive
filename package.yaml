@@ -8,11 +8,3 @@ library:
   source-dirs: src
   dependencies:
     base:
-
-executables:
-  play-hive:
-    main: Main.hs
-    source-dirs: exe
-    dependencies:
-      base:
-      hive:

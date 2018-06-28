@@ -12,12 +12,7 @@ data Tile = Tile
   { owner :: Player
   , kind :: TileType
   , coordinates :: (Int, Int)
-  }
-
-instance Show Tile where
-  show Tile{..} = unlines
-    [ ""
-    ]
+  } deriving (Show,Eq)
 
 -- | The type of each tile on the board.
 data TileType
