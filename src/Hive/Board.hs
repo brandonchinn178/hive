@@ -1,49 +1,34 @@
+{-# LANGUAGE TupleSections #-}
+
 module Hive.Board
-  ( Board(..)
-  , Pieces(..)
+  ( Board
   , emptyBoard
+  , player1Pieces
+  , player2Pieces
   ) where
 
+import Data.Map (Map)
+import qualified Data.Map as Map
+
 import Hive.Coordinate (Coordinate)
+import Hive.Piece (Piece, allPieces)
 
 -- | The data type representing the board of a game of Hive.
 --
 -- A board contains all of the pieces for each player, and their
 -- coordinates on the board (if they're on the board).
 data Board = Board
-  { player1Pieces :: Pieces
-  , player2Pieces :: Pieces
+  { _player1 :: Map Piece (Maybe Coordinate)
+  , _player2 :: Map Piece (Maybe Coordinate)
   }
   deriving (Show)
 
 emptyBoard :: Board
 emptyBoard = Board newPieces newPieces
+  where
+    newPieces = Map.fromList $ map (, Nothing) allPieces
 
-data Pieces = Pieces
-  { bee :: Maybe Coordinate
-  , ant0 :: Maybe Coordinate
-  , ant1 :: Maybe Coordinate
-  , ant2 :: Maybe Coordinate
-  , grass0 :: Maybe Coordinate
-  , grass1 :: Maybe Coordinate
-  , grass2 :: Maybe Coordinate
-  , beetle0 :: Maybe Coordinate
-  , beetle1 :: Maybe Coordinate
-  , spider0 :: Maybe Coordinate
-  , spider1 :: Maybe Coordinate
-  } deriving (Show)
-
-newPieces :: Pieces
-newPieces = Pieces
-  { bee = Nothing
-  , ant0 = Nothing
-  , ant1 = Nothing
-  , ant2 = Nothing
-  , grass0 = Nothing
-  , grass1 = Nothing
-  , grass2 = Nothing
-  , beetle0 = Nothing
-  , beetle1 = Nothing
-  , spider0 = Nothing
-  , spider1 = Nothing
-  }
+-- | Define getters so that outside the module, the board cannot be altered.
+player1Pieces, player2Pieces :: Board -> Map Piece (Maybe Coordinate)
+player1Pieces = _player1
+player2Pieces = _player2
