@@ -7,4 +7,4 @@ ghc-options: -Wall -Werror
 library:
   source-dirs: src
   dependencies:
-    base:
+    - base

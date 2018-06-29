@@ -16,4 +16,4 @@ data HiveState = HiveState
 -- | Determine the next state of the board. Error checks the command
 -- for invalid commands, such as moving the opponent's piece.
 updateState :: HiveState -> Command -> Either String Board
-updateState board player command = undefined
+updateState = undefined
