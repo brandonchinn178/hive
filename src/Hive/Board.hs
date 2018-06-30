@@ -6,11 +6,13 @@ module Hive.Board
   , isOnBoard
   , getPosition
   , getPiece
+  , getPiece'
   , getSurrounding
   , getSurroundingPieces
   , putPiece
   ) where
 
+import Control.Monad ((>=>))
 import Data.Function (on)
 import Data.List (sortBy)
 import Data.Map.Strict (Map, (!))
@@ -59,13 +61,20 @@ getFlippedBoard (Board board) =
 getPosition :: Board -> PlayerPiece -> Maybe Position
 getPosition (Board board) piece = board ! piece
 
+-- | Get the top-most piece at the given coordinate and its height.
+getPiece :: Board -> Coordinate -> Maybe (PlayerPiece, Int)
+getPiece board = (`Map.lookup` getFlippedBoard board) >=> getTop
+  where
+    getTop [] = Nothing
+    getTop l@(x:_) = Just (x, length l - 1)
+
 -- | Get the top-most piece at the given coordinate.
-getPiece :: Board -> Coordinate -> Maybe PlayerPiece
-getPiece board = fmap head . (`Map.lookup` getFlippedBoard board)
+getPiece' :: Board -> Coordinate -> Maybe PlayerPiece
+getPiece' board = fmap fst . getPiece board
 
 -- | Get the pieces in the surrounding coordinates for the given coordinate.
 getSurrounding :: Board -> Coordinate -> Neighbors (Maybe PlayerPiece)
-getSurrounding board = fmap (getPiece board) . getNeighbors
+getSurrounding board = fmap (getPiece' board) . getNeighbors
 
 -- | Get the surrounding pieces for the given coordinate.
 getSurroundingPieces :: Board -> Coordinate -> [PlayerPiece]
