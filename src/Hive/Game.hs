@@ -1,18 +1,22 @@
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Hive.Game
   ( HiveState(..)
+  , HiveResult(..)
   , startState
+  , getResult
   , updateState
   ) where
 
 import Control.Monad (unless)
 import Data.Bifunctor (second)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, mapMaybe)
 
 import Hive.Board
 import Hive.Command
+import Hive.Coordinate
 import Hive.Piece
 import Hive.Player
 
@@ -21,11 +25,30 @@ data HiveState = HiveState
   { board     :: Board
   , player    :: Player
   , hiveRound :: Int -- ^ Increments after both players have gone
-  }
+  } deriving (Show)
+
+-- | The result of a Hive game.
+data HiveResult
+  = Win Player -- ^ The given player has won
+  | Draw       -- ^ Both queen bees are surrounded
+  deriving (Show)
 
 -- | The starting state for a Hive game.
 startState :: HiveState
 startState = HiveState emptyBoard One 0
+
+-- | Get the result of the Hive game, if it's done.
+getResult :: HiveState -> Maybe HiveResult
+getResult HiveState{board} = case (isDead One, isDead Two) of
+  (False, False) -> Nothing
+  (False, True) -> Just $ Win One
+  (True, False) -> Just $ Win Two
+  (True, True) -> Just Draw
+  where
+    isDead p = case getPosition board (p, Bee) of
+      Nothing -> False
+      Just (beeCoordinates, _) -> length (getSurroundingPieces beeCoordinates) == 6
+    getSurroundingPieces = mapMaybe (getPiece board) . getNeighbors
 
 -- | Determine the next state of the board. Error checks the command
 -- for invalid commands, such as moving the opponent's piece.

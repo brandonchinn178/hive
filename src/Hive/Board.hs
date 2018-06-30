@@ -4,11 +4,15 @@ module Hive.Board
   , Position
   , emptyBoard
   , getPosition
+  , getPiece
   , putPiece
   ) where
 
+import Data.Function (on)
+import Data.List (sortBy)
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
+import Data.Maybe (mapMaybe)
 
 import Hive.Coordinate (Coordinate)
 import Hive.Piece (Piece, allPieces)
@@ -33,9 +37,23 @@ emptyBoard = Board $ Map.fromList
   , piece <- allPieces
   ]
 
+-- | Get the board as a map from Coordinate to a list of PlayerPieces, where the head of the
+-- list is the top-most piece of the Coordinate.
+getFlippedBoard :: Board -> Map Coordinate [PlayerPiece]
+getFlippedBoard (Board board) =
+  Map.map orderHeight . Map.fromListWith (++) . mapMaybe swap . Map.toList $ board
+  where
+    swap (_, Nothing) = Nothing
+    swap (piece, Just (coord, height)) = Just (coord, [(height, piece)])
+    orderHeight = map snd . sortBy (compare `on` fst)
+
 -- | Get the position of the given piece.
 getPosition :: Board -> PlayerPiece -> Maybe Position
 getPosition (Board board) piece = board ! piece
+
+-- | Get the top-most piece at the given coordinate.
+getPiece :: Board -> Coordinate -> Maybe PlayerPiece
+getPiece board = fmap head . (`Map.lookup` getFlippedBoard board)
 
 -- | Puts the given piece to the given Position.
 putPiece :: Board -> PlayerPiece -> Position -> Board
