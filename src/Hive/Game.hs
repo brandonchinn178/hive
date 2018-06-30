@@ -10,13 +10,11 @@ module Hive.Game
   , updateState
   ) where
 
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Bifunctor (second)
-import Data.Maybe (isNothing, mapMaybe)
 
 import Hive.Board
 import Hive.Command
-import Hive.Coordinate
 import Hive.Piece
 import Hive.Player
 
@@ -47,31 +45,34 @@ getResult HiveState{board} = case (isDead One, isDead Two) of
   where
     isDead p = case getPosition board (p, Bee) of
       Nothing -> False
-      Just (beeCoordinates, _) -> length (getSurroundingPieces beeCoordinates) == 6
-    getSurroundingPieces = mapMaybe (getPiece board) . getNeighbors
+      Just (beeCoordinates, _) -> length (getSurroundingPieces board beeCoordinates) == 6
 
 -- | Determine the next state of the board. Error checks the command
 -- for invalid commands, such as moving the opponent's piece.
 updateState :: HiveState -> Command -> Either String HiveState
 updateState HiveState{..} Command{..} = second (const nextState) checkValid
   where
-    isPlayerOne = if player == One then True else False
+    otherPlayer = if isPlayerOne then Two else One
+    -- Next state
     nextPosition = (commandPosition, 0) -- TODO: if beetle, possibly increment
     nextState = HiveState
       { board = putPiece board (player, commandPiece) nextPosition
-      , player = if isPlayerOne then Two else One
+      , player = otherPlayer
       , hiveRound = if isPlayerOne then hiveRound else hiveRound + 1
       }
-    noBee = isNothing $ getPosition board (player, Bee)
+    -- Queries
+    isPlayerOne = if player == One then True else False
+    noBee = not $ isOnBoard board (player, Bee)
+    isAdd = not $ isOnBoard board (player, commandPiece)
+    -- Checks
     checkValid = if hiveRound < 4 && noBee
       then checkStart
-      else sequence_ [canLeave, checkValidMovement, canEnter]
-    isAdd = isNothing $ getPosition board (player, commandPiece)
+      else sequence_ [checkLeave, checkValidMovement, checkEnter]
     checkStart = do
-      -- TODO: no movement allowed
-      -- TODO: if hiveRound > 0, can't put next to other color
-      undefined
-    canLeave = unless isAdd $ do
+      when (hiveRound == 3 && commandPiece /= Bee) $ Left "Need to place Bee"
+      unless isAdd $ Left "Cannot move before placing Bee"
+      when (hiveRound > 0) checkWillTouchOtherPlayer
+    checkLeave = unless isAdd $ do
       -- TODO: check doesn't break hive
       -- TODO: check can slide out of (unless grasshopper or beetle moving up)
       -- TODO: check not under beetle
@@ -82,8 +83,11 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
       | isGrasshopper commandPiece -> undefined
       | isBeetle commandPiece -> undefined
       | isSpider commandPiece -> undefined
-    canEnter = do
+    checkEnter = do
       -- TODO: if isAdd, check only surrounded by same color
       -- TODO: check not occupied (unless beetle)
       -- TODO: check can slide into
       undefined
+    checkWillTouchOtherPlayer = when
+      (any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition) $
+      Left "Cannot add piece next to a piece of the other player"

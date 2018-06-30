@@ -3,8 +3,11 @@ module Hive.Board
   , PlayerPiece
   , Position
   , emptyBoard
+  , isOnBoard
   , getPosition
   , getPiece
+  , getSurrounding
+  , getSurroundingPieces
   , putPiece
   ) where
 
@@ -12,9 +15,9 @@ import Data.Function (on)
 import Data.List (sortBy)
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (catMaybes, isJust, mapMaybe)
 
-import Hive.Coordinate (Coordinate)
+import Hive.Coordinate (Coordinate, getNeighbors)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 
@@ -30,12 +33,17 @@ type Position = (Coordinate, Int)
 newtype Board = Board (Map PlayerPiece (Maybe Position))
   deriving (Show)
 
+-- | The starting board for a Hive game.
 emptyBoard :: Board
 emptyBoard = Board $ Map.fromList
   [ ((player, piece), Nothing)
   | player <- [One, Two]
   , piece <- allPieces
   ]
+
+-- | Returns True if the given piece is on the board.
+isOnBoard :: Board -> PlayerPiece -> Bool
+isOnBoard board = isJust . getPosition board
 
 -- | Get the board as a map from Coordinate to a list of PlayerPieces, where the head of the
 -- list is the top-most piece of the Coordinate.
@@ -54,6 +62,16 @@ getPosition (Board board) piece = board ! piece
 -- | Get the top-most piece at the given coordinate.
 getPiece :: Board -> Coordinate -> Maybe PlayerPiece
 getPiece board = fmap head . (`Map.lookup` getFlippedBoard board)
+
+-- | Get the pieces in the surrounding coordinates for the given coordinate.
+--
+-- The pieces are in the same order as 'getNeighbors'.
+getSurrounding :: Board -> Coordinate -> [Maybe PlayerPiece]
+getSurrounding board = map (getPiece board) . getNeighbors
+
+-- | Get the surrounding pieces for the given coordinate.
+getSurroundingPieces :: Board -> Coordinate -> [PlayerPiece]
+getSurroundingPieces board = catMaybes . getSurrounding board
 
 -- | Puts the given piece to the given Position.
 putPiece :: Board -> PlayerPiece -> Position -> Board
