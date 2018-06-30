@@ -13,7 +13,7 @@ module Hive.Game
 
 import Control.Monad (unless, when)
 import Data.Bifunctor (second)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing)
 
 import Hive.Board
 import Hive.Command
@@ -56,6 +56,7 @@ data InvalidCommand
   | CannotMoveFromUnderneath -- ^ When the player tries to move piece under a stack
   | CannotAddNextToOpponent  -- ^ When the player tries to add a piece next to an opponent's piece
   | CannotSlide              -- ^ When the player tries to violate "freedom of movement"
+  | CannotBreakHive          -- ^ When the player tries to move a piece that would break the hive
   deriving (Show)
 
 -- | Determine the next state of the board. Error checks the command
@@ -64,12 +65,13 @@ updateState :: HiveState -> Command -> Either InvalidCommand HiveState
 updateState HiveState{..} Command{..} = second (const nextState) checkValid
   where
     otherPlayer = if isPlayerOne then Two else One
-    currPosition = getPosition board (player, commandPiece)
+    currPiece = (player, commandPiece)
+    currPosition = getPosition board currPiece
     nextSpotPiece = getPiece board commandPosition
     -- Next state
     nextPosition = (commandPosition, 0) -- TODO: if beetle, possibly increment
     nextState = HiveState
-      { board = putPiece board (player, commandPiece) nextPosition
+      { board = putPiece board currPiece nextPosition
       , player = otherPlayer
       , hiveRound = if isPlayerOne then hiveRound else hiveRound + 1
       }
@@ -89,10 +91,10 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
     checkLeave = case currPosition of
       Nothing -> return ()
       Just (coordinate, height) -> do
-        unless (height == 0) $ Left CannotMoveFromUnderneath
+        let topMostHeight = snd $ fromJust $ getPiece board coordinate
+        unless (height == topMostHeight) $ Left CannotMoveFromUnderneath
         checkCanSlide coordinate
-        -- TODO: check doesn't break hive
-        undefined
+        when (height == 0 && not (isHiveWithout board currPiece)) $ Left CannotBreakHive
     checkValidMovement = if
       | commandPiece == Bee -> undefined
       | isAnt commandPiece -> undefined

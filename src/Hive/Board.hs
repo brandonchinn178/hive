@@ -1,9 +1,14 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Hive.Board
   ( Board
   , PlayerPiece
   , Position
   , emptyBoard
   , isOnBoard
+  , isHiveWithout
+  , getBoard
+  , getFlippedBoard
   , getPosition
   , getPiece
   , getPiece'
@@ -14,10 +19,12 @@ module Hive.Board
 
 import Control.Monad ((>=>))
 import Data.Function (on)
-import Data.List (sortBy)
+import Data.List (nub, sortBy)
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
+import Data.Set ((\\))
+import qualified Data.Set as Set
 
 import Hive.Coordinate (Coordinate, Neighbors, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
@@ -46,6 +53,25 @@ emptyBoard = Board $ Map.fromList
 -- | Returns True if the given piece is on the board.
 isOnBoard :: Board -> PlayerPiece -> Bool
 isOnBoard board = isJust . getPosition board
+
+-- | Returns True if the board is still a contiguous hive without the given piece.
+isHiveWithout :: Board -> PlayerPiece -> Bool
+isHiveWithout (Board board) piece = case occupiedSpots of
+  [] -> True -- no other piece is on the board (e.g. the first round)
+  (x:xs) -> isHive [x] $ Set.fromList xs
+  where
+    board' = Map.delete piece board
+    occupiedSpots = nub . Map.elems . Map.mapMaybe (fmap fst) $ board'
+    isHive _ (Set.null -> True) = True
+    isHive [] _ = False
+    isHive (x:todo) rest =
+      let neighbors = Set.fromList $ toNeighborhood $ getNeighbors x
+          found = Set.intersection neighbors rest
+      in isHive (todo ++ Set.toList found) $ rest \\ found
+
+-- | Get the underlying board.
+getBoard :: Board -> Map PlayerPiece (Maybe Position)
+getBoard (Board board) = board
 
 -- | Get the board as a map from Coordinate to a list of PlayerPieces, where the head of the
 -- list is the top-most piece of the Coordinate.
