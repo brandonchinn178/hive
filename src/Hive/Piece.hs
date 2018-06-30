@@ -1,10 +1,10 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Hive.Piece
   ( Piece(..)
+  , PieceType(..)
   , allPieces
-  , isAnt
-  , isGrasshopper
-  , isBeetle
-  , isSpider
+  , pieceToType
   ) where
 
 data Piece
@@ -36,8 +36,19 @@ allPieces =
   , Spider1
   ]
 
-isAnt, isGrasshopper, isBeetle, isSpider :: Piece -> Bool
-isAnt = (`elem` [Ant0, Ant1, Ant2])
-isGrasshopper = (`elem` [Grass0, Grass1, Grass2])
-isBeetle = (`elem` [Beetle0, Beetle1])
-isSpider = (`elem` [Spider0, Spider1])
+data PieceType = BeeType | AntType | GrasshopperType | BeetleType | SpiderType
+  deriving (Show,Eq)
+
+pieceToType :: Piece -> PieceType
+pieceToType = \case
+  Bee -> BeeType
+  Ant0 -> AntType
+  Ant1 -> AntType
+  Ant2 -> AntType
+  Grass0 -> GrasshopperType
+  Grass1 -> GrasshopperType
+  Grass2 -> GrasshopperType
+  Beetle0 -> BeetleType
+  Beetle1 -> BeetleType
+  Spider0 -> SpiderType
+  Spider1 -> SpiderType

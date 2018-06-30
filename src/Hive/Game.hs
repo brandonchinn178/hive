@@ -56,7 +56,7 @@ data InvalidCommand
   | CannotMoveFromUnderneath -- ^ When the player tries to move piece under a stack
   | CannotMoveToOccupied     -- ^ When the player tries to move into an occupied spot (not beetle)
   | CannotAddNextToOpponent  -- ^ When the player tries to add a piece next to an opponent's piece
-  | CannotSlide              -- ^ When the player tries to violate "freedom of movement"
+  | UnableToSlide            -- ^ When the player tries to violate "freedom of movement"
   | CannotBreakHive          -- ^ When the player tries to move a piece that would break the hive
   deriving (Show)
 
@@ -69,6 +69,7 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
     currPiece = (player, commandPiece)
     currPosition = getPosition board currPiece
     nextSpotPiece = getPiece board commandPosition
+    commandPieceType = pieceToType commandPiece
     -- Next state
     nextHeight = fromMaybe 0 $ ((+ 1) . snd) <$> nextSpotPiece
     nextPosition = (commandPosition, nextHeight)
@@ -97,21 +98,23 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
         unless (height == topMostHeight) $ Left CannotMoveFromUnderneath
         checkCanSlide coordinate
         when (height == 0 && not (isHiveWithout board currPiece)) $ Left CannotBreakHive
-    checkValidMovement = if
-      | commandPiece == Bee -> undefined
-      | isAnt commandPiece -> undefined
-      | isGrasshopper commandPiece -> undefined
-      | isBeetle commandPiece -> undefined
-      | isSpider commandPiece -> undefined
+    checkValidMovement = case commandPieceType of
+      BeeType -> undefined
+      AntType -> undefined
+      GrasshopperType -> undefined
+      BeetleType -> undefined
+      SpiderType -> undefined
     checkEnter = do
       when isAdd checkWillTouchOtherPlayer
-      unless (isBeetle commandPiece || not isNextSpotOccupied) $ Left CannotMoveToOccupied
+      unless (commandPieceType == BeetleType || not isNextSpotOccupied) $ Left CannotMoveToOccupied
       checkCanSlide commandPosition
     checkWillTouchOtherPlayer = when
       (any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
       $ Left CannotAddNextToOpponent
-    checkCanSlide coordinate = unless
-      (isGrasshopper commandPiece || (isBeetle commandPiece && isNextSpotOccupied))
-      $ do
-        let occupied = fmap isJust $ getSurrounding board coordinate
-        unless (canSlide occupied) $ Left CannotSlide
+    checkCanSlide coordinate =
+      let isSlide = not . or $
+            [ commandPieceType == GrasshopperType
+            , commandPieceType == BeetleType && isNextSpotOccupied
+            ]
+          occupied = isJust <$> getSurrounding board coordinate
+      in unless (not isSlide || canSlide occupied) $ Left UnableToSlide
