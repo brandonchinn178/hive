@@ -13,7 +13,7 @@ module Hive.Game
 
 import Control.Monad (unless, when)
 import Data.Bifunctor (second)
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 
 import Hive.Board
 import Hive.Command
@@ -69,7 +69,8 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
     currPosition = getPosition board currPiece
     nextSpotPiece = getPiece board commandPosition
     -- Next state
-    nextPosition = (commandPosition, 0) -- TODO: if beetle, possibly increment
+    nextHeight = fromMaybe 0 $ ((+ 1) . snd) <$> nextSpotPiece
+    nextPosition = (commandPosition, nextHeight)
     nextState = HiveState
       { board = putPiece board currPiece nextPosition
       , player = otherPlayer
