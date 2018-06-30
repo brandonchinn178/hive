@@ -17,7 +17,7 @@ import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
 
-import Hive.Coordinate (Coordinate, getNeighbors)
+import Hive.Coordinate (Coordinate, Neighbors, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 
@@ -64,14 +64,12 @@ getPiece :: Board -> Coordinate -> Maybe PlayerPiece
 getPiece board = fmap head . (`Map.lookup` getFlippedBoard board)
 
 -- | Get the pieces in the surrounding coordinates for the given coordinate.
---
--- The pieces are in the same order as 'getNeighbors'.
-getSurrounding :: Board -> Coordinate -> [Maybe PlayerPiece]
-getSurrounding board = map (getPiece board) . getNeighbors
+getSurrounding :: Board -> Coordinate -> Neighbors (Maybe PlayerPiece)
+getSurrounding board = fmap (getPiece board) . getNeighbors
 
 -- | Get the surrounding pieces for the given coordinate.
 getSurroundingPieces :: Board -> Coordinate -> [PlayerPiece]
-getSurroundingPieces board = catMaybes . getSurrounding board
+getSurroundingPieces board = catMaybes . toNeighborhood . getSurrounding board
 
 -- | Puts the given piece to the given Position.
 putPiece :: Board -> PlayerPiece -> Position -> Board

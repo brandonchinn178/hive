@@ -1,6 +1,11 @@
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Hive.Coordinate
   ( Coordinate
+  , Neighbors(..)
   , getNeighbors
+  , toNeighborhood
   ) where
 
 -- | A coordinate on the Hive board.
@@ -21,13 +26,27 @@ module Hive.Coordinate
 -- positive y-axis goes to the north.
 type Coordinate = (Int, Int)
 
+-- | Data associated with the neighbors of a coordinate.
+data Neighbors a = Neighbors
+  { north     :: a
+  , northeast :: a
+  , southeast :: a
+  , south     :: a
+  , southwest :: a
+  , northwest :: a
+  } deriving (Show, Functor)
+
 -- | Get the coordinates surrounding the given coordinate.
-getNeighbors :: Coordinate -> [Coordinate]
-getNeighbors (x, y) =
-  [ (x, y + 1)     -- N
-  , (x + 1, y + 1) -- NE
-  , (x + 1, y)     -- SE
-  , (x, y - 1)     -- S
-  , (x - 1, y - 1) -- SW
-  , (x - 1, y)     -- NW
-  ]
+getNeighbors :: Coordinate -> Neighbors Coordinate
+getNeighbors (x, y) = Neighbors
+  { north = (x, y + 1)
+  , northeast = (x + 1, y + 1)
+  , southeast = (x + 1, y)
+  , south = (x, y - 1)
+  , southwest = (x - 1, y - 1)
+  , northwest = (x - 1, y)
+  }
+
+-- | Convert neighbors to a list.
+toNeighborhood :: Neighbors a -> [a]
+toNeighborhood Neighbors{..} = [north, northeast, southeast, south, southwest, northwest]
