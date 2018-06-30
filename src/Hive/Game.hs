@@ -54,6 +54,7 @@ data InvalidCommand
   = NeedToPlaceBee           -- ^ When it's round 4 and the bee has not been placed
   | CannotMoveWithoutBee     -- ^ When the bee isn't on the board yet and player tries to move
   | CannotMoveFromUnderneath -- ^ When the player tries to move piece under a stack
+  | CannotMoveToOccupied     -- ^ When the player tries to move into an occupied spot (not beetle)
   | CannotAddNextToOpponent  -- ^ When the player tries to add a piece next to an opponent's piece
   | CannotSlide              -- ^ When the player tries to violate "freedom of movement"
   | CannotBreakHive          -- ^ When the player tries to move a piece that would break the hive
@@ -103,8 +104,8 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
       | isBeetle commandPiece -> undefined
       | isSpider commandPiece -> undefined
     checkEnter = do
-      -- TODO: if isAdd, check only surrounded by same color
-      -- TODO: check not occupied (unless beetle)
+      when isAdd checkWillTouchOtherPlayer
+      unless (isBeetle commandPiece || not isNextSpotOccupied) $ Left CannotMoveToOccupied
       checkCanSlide commandPosition
     checkWillTouchOtherPlayer = when
       (any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
