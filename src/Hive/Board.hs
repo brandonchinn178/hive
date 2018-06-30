@@ -1,6 +1,7 @@
 module Hive.Board
   ( Board
   , PlayerPiece
+  , Position
   , emptyBoard
   , getBoard
   , putPiece
@@ -15,11 +16,14 @@ import Hive.Player (Player(..))
 
 type PlayerPiece = (Player, Piece)
 
+-- | A coordinate with a value for the height on the board (e.g. beetle stacks)
+type Position = (Coordinate, Int)
+
 -- | The data type representing the board of a game of Hive.
 --
 -- A board contains all of the pieces for each player, and their
--- coordinates on the board (if they're on the board).
-newtype Board = Board (Map PlayerPiece (Maybe Coordinate))
+-- position on the board (if they're on the board).
+newtype Board = Board (Map PlayerPiece (Maybe Position))
   deriving (Show)
 
 emptyBoard :: Board
@@ -30,9 +34,9 @@ emptyBoard = Board $ Map.fromList
   ]
 
 -- | A getter so that the Board data type cannot be altered outside of this module.
-getBoard :: Board -> Map PlayerPiece (Maybe Coordinate)
+getBoard :: Board -> Map PlayerPiece (Maybe Position)
 getBoard (Board board) = board
 
--- | Puts the given piece to the given Coordinate.
-putPiece :: Board -> PlayerPiece -> Coordinate -> Board
+-- | Puts the given piece to the given Position.
+putPiece :: Board -> PlayerPiece -> Position -> Board
 putPiece (Board board) piece coordinate = Board $ Map.insert piece (Just coordinate) board
