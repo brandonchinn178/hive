@@ -5,6 +5,7 @@
 module Hive.Game
   ( HiveState(..)
   , HiveResult(..)
+  , InvalidCommand(..)
   , startState
   , getResult
   , updateState
@@ -49,9 +50,17 @@ getResult HiveState{board} = case (isDead One, isDead Two) of
       Nothing -> False
       Just (beeCoordinates, _) -> length (getSurroundingPieces board beeCoordinates) == 6
 
+data InvalidCommand
+  = NeedToPlaceBee           -- ^ When it's round 4 and the bee has not been placed
+  | CannotMoveWithoutBee     -- ^ When the bee isn't on the board yet and player tries to move
+  | CannotMoveFromUnderneath -- ^ When the player tries to move piece under a stack
+  | CannotAddNextToOpponent  -- ^ When the player tries to add a piece next to an opponent's piece
+  | CannotSlide              -- ^ When the player tries to violate "freedom of movement"
+  deriving (Show)
+
 -- | Determine the next state of the board. Error checks the command
 -- for invalid commands, such as moving the opponent's piece.
-updateState :: HiveState -> Command -> Either String HiveState
+updateState :: HiveState -> Command -> Either InvalidCommand HiveState
 updateState HiveState{..} Command{..} = second (const nextState) checkValid
   where
     otherPlayer = if isPlayerOne then Two else One
@@ -74,13 +83,13 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
       then checkStart
       else sequence_ [checkLeave, checkValidMovement, checkEnter]
     checkStart = do
-      when (hiveRound == 3 && commandPiece /= Bee) $ Left "Need to place Bee"
-      unless isAdd $ Left "Cannot move before placing Bee"
+      when (hiveRound == 3 && commandPiece /= Bee) $ Left NeedToPlaceBee
+      unless isAdd $ Left CannotMoveWithoutBee
       when (hiveRound > 0) checkWillTouchOtherPlayer
     checkLeave = case currPosition of
       Nothing -> return ()
       Just (coordinate, height) -> do
-        unless (height == 0) $ Left "Cannot move a piece currently under a beetle"
+        unless (height == 0) $ Left CannotMoveFromUnderneath
         checkCanSlide coordinate
         -- TODO: check doesn't break hive
         undefined
@@ -96,9 +105,9 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
       checkCanSlide commandPosition
     checkWillTouchOtherPlayer = when
       (any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
-      $ Left "Cannot add piece next to a piece of the other player"
+      $ Left CannotAddNextToOpponent
     checkCanSlide coordinate = unless
       (isGrasshopper commandPiece || (isBeetle commandPiece && isNextSpotOccupied))
       $ do
         let occupied = fmap isJust $ getSurrounding board coordinate
-        unless (canSlide occupied) $ Left "Cannot slide in/out of the given position"
+        unless (canSlide occupied) $ Left CannotSlide
