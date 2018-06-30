@@ -1,6 +1,10 @@
 module Hive.Piece
   ( Piece(..)
   , allPieces
+  , isAnt
+  , isGrasshopper
+  , isBeetle
+  , isSpider
   ) where
 
 data Piece
@@ -31,3 +35,9 @@ allPieces =
   , Spider0
   , Spider1
   ]
+
+isAnt, isGrasshopper, isBeetle, isSpider :: Piece -> Bool
+isAnt = (`elem` [Ant0, Ant1, Ant2])
+isGrasshopper = (`elem` [Grass0, Grass1, Grass2])
+isBeetle = (`elem` [Beetle0, Beetle1])
+isSpider = (`elem` [Spider0, Spider1])

@@ -3,11 +3,11 @@ module Hive.Board
   , PlayerPiece
   , Position
   , emptyBoard
-  , getBoard
+  , getPosition
   , putPiece
   ) where
 
-import Data.Map.Strict (Map)
+import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 
 import Hive.Coordinate (Coordinate)
@@ -33,9 +33,9 @@ emptyBoard = Board $ Map.fromList
   , piece <- allPieces
   ]
 
--- | A getter so that the Board data type cannot be altered outside of this module.
-getBoard :: Board -> Map PlayerPiece (Maybe Position)
-getBoard (Board board) = board
+-- | Get the position of the given piece.
+getPosition :: Board -> PlayerPiece -> Maybe Position
+getPosition (Board board) piece = board ! piece
 
 -- | Puts the given piece to the given Position.
 putPiece :: Board -> PlayerPiece -> Position -> Board

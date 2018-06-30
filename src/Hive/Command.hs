@@ -2,17 +2,13 @@
 
 module Hive.Command
   ( Command(..)
-  , CommandType(..)
   ) where
 
 import Hive.Coordinate (Coordinate)
 import Hive.Piece (Piece)
 
+-- | A command that moves a given piece to the given coordinate.
 data Command = Command
-  { commandType     :: CommandType
-  , commandPiece    :: Piece
+  { commandPiece    :: Piece
   , commandPosition :: Coordinate
   } deriving (Show,Eq)
-
-data CommandType = AddPiece | MovePiece
-  deriving (Show,Eq)
