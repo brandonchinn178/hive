@@ -7,14 +7,16 @@ module Hive.Board
   , emptyBoard
   , isOnBoard
   , isHiveWithout
+  , putPiece
   , getBoard
   , getFlippedBoard
+  , getOccupiedSpots
   , getPosition
   , getPiece
   , getPiece'
   , getSurrounding
   , getSurroundingPieces
-  , putPiece
+  , getBorderWithout
   ) where
 
 import Control.Monad ((>=>))
@@ -56,18 +58,20 @@ isOnBoard board = isJust . getPosition board
 
 -- | Returns True if the board is still a contiguous hive without the given piece.
 isHiveWithout :: Board -> PlayerPiece -> Bool
-isHiveWithout (Board board) piece = case occupiedSpots of
+isHiveWithout (Board board) piece = case getOccupiedSpots (Board $ Map.delete piece board) of
   [] -> True -- no other piece is on the board (e.g. the first round)
   (x:xs) -> isHive [x] $ Set.fromList xs
   where
-    board' = Map.delete piece board
-    occupiedSpots = nub . Map.elems . Map.mapMaybe (fmap fst) $ board'
     isHive _ (Set.null -> True) = True
     isHive [] _ = False
     isHive (x:todo) rest =
       let neighbors = Set.fromList $ toNeighborhood $ getNeighbors x
           found = Set.intersection neighbors rest
       in isHive (todo ++ Set.toList found) $ rest \\ found
+
+-- | Puts the given piece to the given Position.
+putPiece :: Board -> PlayerPiece -> Position -> Board
+putPiece (Board board) piece coordinate = Board $ Map.insert piece (Just coordinate) board
 
 -- | Get the underlying board.
 getBoard :: Board -> Map PlayerPiece (Maybe Position)
@@ -82,6 +86,10 @@ getFlippedBoard (Board board) =
     swap (_, Nothing) = Nothing
     swap (piece, Just (coord, height)) = Just (coord, [(height, piece)])
     orderHeight = map snd . sortBy (compare `on` fst)
+
+-- | Get all occupied coordinates on the board.
+getOccupiedSpots :: Board -> [Coordinate]
+getOccupiedSpots (Board board) = nub . Map.elems . Map.mapMaybe (fmap fst) $ board
 
 -- | Get the position of the given piece.
 getPosition :: Board -> PlayerPiece -> Maybe Position
@@ -106,6 +114,11 @@ getSurrounding board = fmap (getPiece' board) . getNeighbors
 getSurroundingPieces :: Board -> Coordinate -> [PlayerPiece]
 getSurroundingPieces board = catMaybes . toNeighborhood . getSurrounding board
 
--- | Puts the given piece to the given Position.
-putPiece :: Board -> PlayerPiece -> Position -> Board
-putPiece (Board board) piece coordinate = Board $ Map.insert piece (Just coordinate) board
+-- | Get the coordinates around the hive without the given piece.
+getBorderWithout :: Board -> PlayerPiece -> [Coordinate]
+getBorderWithout (Board board) piece = filter ((/= maybeCoord) . Just) spotsAroundHive
+  where
+    maybeCoord = fmap fst $ board ! piece
+    occupied = getOccupiedSpots (Board $ Map.delete piece board)
+    spotsAroundHive =
+      nub . filter (`notElem` occupied) . concatMap (toNeighborhood . getNeighbors) $ occupied

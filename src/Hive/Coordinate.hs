@@ -6,7 +6,6 @@ module Hive.Coordinate
   , Neighbors(..)
   , getNeighbors
   , toNeighborhood
-  , canSlide
   ) where
 
 -- | A coordinate on the Hive board.
@@ -51,18 +50,3 @@ getNeighbors (x, y) = Neighbors
 -- | Convert neighbors to a list.
 toNeighborhood :: Neighbors a -> [a]
 toNeighborhood Neighbors{..} = [north, northeast, southeast, south, southwest, northwest]
-
--- | Return whether the given piece can physically slide out of the given configuration.
---
--- The elements in the given list are True if that spot (corresponding with 'getNeighbors') is
--- occupied.
-canSlide :: Neighbors Bool -> Bool
-canSlide Neighbors{..} = or $ fmap and trappedIfMatches
-  where
-    trappedIfMatches =
-      [ [north, southeast, southwest]
-      , [northeast, south, northwest]
-      , [north, northeast, south, southwest]
-      , [northeast, southeast, southwest, northwest]
-      , [southeast, south, northwest, north]
-      ]
