@@ -24,7 +24,7 @@ import Hive.Player
 
 -- | The state of a Hive game.
 data HiveState = HiveState
-  { board     :: Board
+  { board     :: HiveBoard
   , player    :: Player
   , hiveRound :: Int -- ^ Increments after both players have gone
   } deriving (Show)
@@ -111,5 +111,5 @@ updateState HiveState{..} Command{..} = second (const nextState) checkValid
       $ Left CannotAddNextToOpponent
 
 -- | Get all the valid moves for the given piece.
-getValidMoves :: Board -> PlayerPiece -> [Coordinate]
+getValidMoves :: HiveBoard -> PlayerPiece -> [Coordinate]
 getValidMoves = undefined

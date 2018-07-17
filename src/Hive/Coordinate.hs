@@ -5,6 +5,7 @@ module Hive.Coordinate
   ( Coordinate
   , Neighbors(..)
   , getNeighbors
+  , getNeighbors'
   , toNeighborhood
   ) where
 
@@ -46,6 +47,10 @@ getNeighbors (x, y) = Neighbors
   , southwest = (x - 1, y - 1)
   , northwest = (x - 1, y)
   }
+
+-- | Get the coordinates surrounding the given coordinate, without caring about order.
+getNeighbors' :: Coordinate -> [Coordinate]
+getNeighbors' = toNeighborhood . getNeighbors
 
 -- | Convert neighbors to a list.
 toNeighborhood :: Neighbors a -> [a]
