@@ -110,5 +110,14 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
       $ Left CannotAddNextToOpponent
 
 -- | Get all the valid moves for the given piece.
+--
+-- If the piece is not on the board, get the possible positions to put the piece.
 getValidMoves :: HiveBoard -> PlayerPiece -> [Coordinate]
-getValidMoves = undefined
+getValidMoves board playerPiece@(player, _) = case getPosition board playerPiece of
+  Nothing -> getValidSpotsOnBorder
+  Just pos -> getValidFrom pos
+  where
+    getValidSpotsOnBorder = filter (not . isTouchingOpponent) $ getBorderWithout board playerPiece
+    getValidFrom currPosition = undefined
+    -- Queries
+    isTouchingOpponent coord = any ((/= player) . fst) $ getSurroundingPieces board coord
