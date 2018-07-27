@@ -13,7 +13,6 @@ module Hive.Game
   ) where
 
 import Control.Monad (unless, when)
-import Data.Bifunctor (second)
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 
 import Hive.Board
@@ -66,7 +65,7 @@ data InvalidCommand
 -- | Determine the next state of the board. Error checks the command
 -- for invalid commands, such as moving the opponent's piece.
 updateState :: HiveState -> Command -> Either InvalidCommand HiveState
-updateState HiveState{..} Command{..} = second (const nextState) checkValid
+updateState HiveState{..} Command{..} = checkValid >> pure nextState
   where
     otherPlayer = if isPlayerOne then Two else One
     currPiece = (player, commandPiece)
