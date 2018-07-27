@@ -22,10 +22,10 @@ module Hive.Board
   , getBorderWithout
   ) where
 
-import Control.Monad ((>=>))
+import Control.Monad (join, (>=>))
 import Data.Function (on)
 import Data.List (nub, sortBy)
-import Data.Map.Strict (Map, (!))
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
 import Data.Set ((\\))
@@ -112,7 +112,7 @@ getOccupiedSpots = nub . Map.elems . Map.mapMaybe (fmap fst) . toBoard
 
 -- | Get the position of the given piece.
 getPosition :: BoardLike b => b -> PlayerPiece -> Maybe Position
-getPosition (toBoard -> board) piece = board ! piece
+getPosition (toBoard -> board) piece = join $ Map.lookup piece board
 
 -- | Get the top-most piece at the given coordinate and its height.
 getPiece :: BoardLike b => b -> Coordinate -> Maybe (PlayerPiece, Int)
