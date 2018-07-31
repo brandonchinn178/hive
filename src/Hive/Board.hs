@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Hive.Board
   ( Board
-  , HiveBoard
-  , BoardLike(..)
   , PlayerPiece
   , Position
   , emptyBoard
+  , putPiece
+  , removePiece
   , isOnBoard
   , isHiveWithout
   , putPiece
@@ -28,14 +29,14 @@ import Data.List (nub, sortBy)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
-import Data.Set ((\\))
+import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
 import Hive.Coordinate (Coordinate, Neighbors, getNeighbors, getNeighbors', toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 
-{- Types and constructors -}
+{- Auxiliary types -}
 
 -- | A piece on the board and the player that owns the piece.
 type PlayerPiece = (Player, Piece)
@@ -43,32 +44,44 @@ type PlayerPiece = (Player, Piece)
 -- | A coordinate with a value for the height on the board (e.g. beetle stacks)
 type Position = (Coordinate, Int)
 
--- | A board of pieces and their positions. May or may not have all the pieces.
-type Board = Map PlayerPiece (Maybe Position)
+{- Board type -}
 
 -- | The data type representing the board of a game of Hive.
---
--- Guaranteed to contain all the pieces for each player.
-newtype HiveBoard = HiveBoard Board
-  deriving (Show)
-
--- | A type class generalizing any Board data type.
-class BoardLike b where
-  toBoard :: b -> Board
-
-instance BoardLike Board where
-  toBoard = id
-
-instance BoardLike HiveBoard where
-  toBoard (HiveBoard board) = board
+data Board = Board
+  { pieceMap :: Map PlayerPiece (Maybe Position)
+    -- ^ Nothing = piece not on board yet. Guaranteed to contain all the pieces for each player.
+  , border :: Set Coordinate
+    -- ^ The empty spots around the board. Guaranteed to be up to date with pieceMap. Added as a
+    -- separate field because it's easier to keep track as pieces are added than recomputing.
+  }
 
 -- | The starting board for a Hive game.
-emptyBoard :: HiveBoard
-emptyBoard = HiveBoard $ Map.fromList
-  [ ((player, piece), Nothing)
-  | player <- [One, Two]
-  , piece <- allPieces
-  ]
+emptyBoard :: Board
+emptyBoard = Board
+  { pieceMap = Map.fromList
+      [((player, piece), Nothing) | player <- [One, Two], piece <- allPieces]
+  , border = []
+  }
+
+-- | Adds or moves the given piece to the given coordinate.
+putPiece :: PlayerPiece -> Coordinate -> Board -> Board
+putPiece piece coordinate board@Board{..} = board
+  { pieceMap = Map.insert piece (Just (coordinate, height)) pieceMap
+  , border = newBorder
+  }
+  where
+    height = fromMaybe 0 $ (+ 1) <$> heightAtCoordinate
+    heightAtCoordinate = snd <$> getPiece board coordinate
+    newBorder = undefined
+      -- remove next position
+      -- add all unoccupied neighbors of new position
+      -- remove all neighbors of previous position that don't have any occupied neighbors
+
+-- | Remove the given piece from the board.
+--
+-- Doesn't occur in an actual game, but useful for figuring out mechanics mid-move.
+removePiece :: PlayerPiece -> Board -> Board
+removePiece piece board = undefined
 
 {- Functions -}
 
