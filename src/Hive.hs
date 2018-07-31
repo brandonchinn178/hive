@@ -3,7 +3,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Hive
-  ( HiveState(..)
+  ( module X
+  , HiveState(..)
   , HiveResult(..)
   , InvalidCommand(..)
   , startState
@@ -15,11 +16,11 @@ module Hive
 import Control.Monad (unless, when)
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 
-import Hive.Board
-import Hive.Command
-import Hive.Coordinate
-import Hive.Piece
-import Hive.Player
+import Hive.Board as X
+import Hive.Command as X
+import Hive.Coordinate as X
+import Hive.Piece as X
+import Hive.Player as X
 
 -- | The state of a Hive game.
 data HiveState = HiveState
