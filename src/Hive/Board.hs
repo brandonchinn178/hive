@@ -1,34 +1,31 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Hive.Board
-  ( Board
-  , PlayerPiece
+  ( PlayerPiece
   , Position
+  -- * Board type
+  , Board
   , emptyBoard
+  , coordinateMap
+  -- * Board updates
   , putPiece
   , removePiece
-  , isOnBoard
-  , isHiveWithout
-  , putPiece
-  , getFlippedBoard
-  , getOccupiedSpots
-  , getPosition
+  -- * Board queries
   , getPiece
   , getPiece'
-  , getSurrounding
-  , getSurroundingPieces
-  , getBorderWithout
+  , isOccupied
   ) where
 
-import Control.Monad (join, (>=>))
+import Control.Monad (join, (<=<))
 import Data.Function (on)
 import Data.List (nub, sortBy)
-import Data.Map.Strict (Map)
+import Data.Map.Strict (Map, (!?))
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes, isJust, mapMaybe)
+import Data.Maybe (catMaybes, isJust)
 import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
@@ -41,7 +38,7 @@ import Hive.Player (Player(..))
 -- | A piece on the board and the player that owns the piece.
 type PlayerPiece = (Player, Piece)
 
--- | A coordinate with a value for the height on the board (e.g. beetle stacks)
+-- | A coordinate with a value for the height on the board (e.g. beetle stacks), with 0 = bottom.
 type Position = (Coordinate, Int)
 
 {- Board type -}
@@ -60,28 +57,62 @@ emptyBoard :: Board
 emptyBoard = Board
   { pieceMap = Map.fromList
       [((player, piece), Nothing) | player <- [One, Two], piece <- allPieces]
-  , border = []
+  , border = Set.empty
   }
 
--- | Adds or moves the given piece to the given coordinate.
+-- | A map from Coordinate to a list of PlayerPieces, where the head of the list is the top-most
+-- piece at that Coordinate.
+coordinateMap :: Board -> Map Coordinate [PlayerPiece]
+coordinateMap = Map.map orderHeight . invert . Map.mapMaybe id . pieceMap
+  where
+    invert = fromListCombine . map swap . Map.toList
+    swap (piece, (coord, height)) = (coord, (piece, height))
+    fromListCombine = Map.fromListWith (++) . map (fmap pure)
+    orderHeight = map fst . sortBy (compare `on` snd)
+
+{- Board updates -}
+
+-- | Add or move the given piece to the given coordinate.
 putPiece :: PlayerPiece -> Coordinate -> Board -> Board
 putPiece piece coordinate board@Board{..} = board
   { pieceMap = Map.insert piece (Just (coordinate, height)) pieceMap
   , border = newBorder
   }
   where
-    height = fromMaybe 0 $ (+ 1) <$> heightAtCoordinate
+    height = maybe 0 (+ 1) heightAtCoordinate
     heightAtCoordinate = snd <$> getPiece board coordinate
-    newBorder = undefined
-      -- remove next position
-      -- add all unoccupied neighbors of new position
-      -- remove all neighbors of previous position that don't have any occupied neighbors
+    newBorder =
+      Set.delete coordinate
+      . Set.union unoccupiedNeighbors
+      . (`Set.difference` prevNeighbors)
+      $ border
+    -- all unoccupied neighbors of new position
+    unoccupiedNeighbors = Set.filter (not . isOccupied board) $ getNeighbors' coordinate
+    -- all neighbors of previous position that don't have any occupied neighbors
+    prevNeighbors = undefined
 
 -- | Remove the given piece from the board.
 --
 -- Doesn't occur in an actual game, but useful for figuring out mechanics mid-move.
 removePiece :: PlayerPiece -> Board -> Board
 removePiece piece board = undefined
+
+{- Board queries -}
+
+-- | Get the top-most piece and its height at the given coordinate.
+getPiece :: Board -> Coordinate -> Maybe (PlayerPiece, Int)
+getPiece board = getTop <=< (coordinateMap board !?)
+  where
+    getTop [] = Nothing
+    getTop l@(x:_) = Just (x, length l - 1)
+
+-- | Get the top-most piece at the given coordinate.
+getPiece' :: Board -> Coordinate -> Maybe PlayerPiece
+getPiece' = fmap fst .: getPiece
+
+-- | Return True if the given coordinate is occupied on the board.
+isOccupied :: Board -> Coordinate -> Bool
+isOccupied board = isJust . getPiece' board
 
 {- Functions -}
 
@@ -102,8 +133,7 @@ isHiveWithout (toBoard -> board) piece = case getOccupiedSpots (board `without` 
     isHive _ (Set.null -> True) = True
     isHive [] _ = False
     isHive (x:todo) rest =
-      let neighbors = Set.fromList $ getNeighbors' x
-          found = Set.intersection neighbors rest
+      let found = Set.intersection (getNeighbors' x) rest
       in isHive (todo ++ Set.toList found) $ rest \\ found
 
 -- | Puts the given piece to the given Position.

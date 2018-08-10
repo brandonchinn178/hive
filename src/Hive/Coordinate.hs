@@ -9,6 +9,9 @@ module Hive.Coordinate
   , toNeighborhood
   ) where
 
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 -- | A coordinate on the Hive board.
 --
 -- The origin is arbitrary; all that matters are the coordinates'
@@ -49,8 +52,8 @@ getNeighbors (x, y) = Neighbors
   }
 
 -- | Get the coordinates surrounding the given coordinate, without caring about order.
-getNeighbors' :: Coordinate -> [Coordinate]
-getNeighbors' = toNeighborhood . getNeighbors
+getNeighbors' :: Coordinate -> Set Coordinate
+getNeighbors' = Set.fromList . toNeighborhood . getNeighbors
 
 -- | Convert neighbors to a list.
 toNeighborhood :: Neighbors a -> [a]
