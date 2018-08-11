@@ -13,11 +13,13 @@ module Hive.Board
   , putPiece
   , removePiece
   -- * Board queries
+  , getNeighborsWithoutNeighbors
   , getPiece
   , getPiece'
   , getSurrounding
   , getSurroundingPieces
   -- * Board predicates
+  , hasNeighbors
   , isOccupied
   ) where
 
@@ -75,33 +77,46 @@ coordinateMap = Map.map orderHeight . invert . Map.mapMaybe id . pieceMap
 
 -- | Add or move the given piece to the given coordinate.
 putPiece :: PlayerPiece -> Coordinate -> Board -> Board
-putPiece piece coordinate board@Board{pieceMap = oldMap, border = oldBorder} = board
-  { pieceMap = newMap
-  , border = newBorder
-  }
+putPiece piece coordinate oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
+  newBoard { border = newBorder }
   where
-    newMap = Map.insert piece (Just (coordinate, height)) oldMap
-    height = maybe 0 ((+ 1) . snd) $ getPiece board coordinate
+    newBoard = oldBoard { pieceMap = Map.insert piece (Just (coordinate, height)) oldMap }
+    height = maybe 0 ((+ 1) . snd) $ getPiece oldBoard coordinate
     newBorder =
       Set.delete coordinate
       . Set.union unoccupiedNeighbors
       . (`Set.difference` prevNeighbors)
       $ oldBorder
     -- all unoccupied neighbors of new position
-    unoccupiedNeighbors = Set.filter (not . isOccupied board) $ getNeighborhood coordinate
+    unoccupiedNeighbors = Set.filter (not . isOccupied oldBoard) $ getNeighborhood coordinate
     -- all neighbors of previous position that don't have any other occupied neighbors
     prevNeighbors = case oldMap ! piece of
       Nothing -> Set.empty
-      Just (prev, _) -> Set.filter noNeighbors $ getNeighborhood prev
-    noNeighbors = Set.null . getSurroundingPieces board
+      Just (prev, _) -> getNeighborsWithoutNeighbors newBoard prev
 
 -- | Remove the given piece from the board.
 --
 -- Doesn't occur in an actual game, but useful for figuring out mechanics mid-move.
 removePiece :: PlayerPiece -> Board -> Board
-removePiece piece board = undefined
+removePiece piece oldBoard@Board{pieceMap = oldMap, border = oldBorder} = board
+  { pieceMap = newMap
+  , border = newBorder
+  }
+  where
+    newBoard = board { pieceMap = Map.insert piece Nothing oldMap }
+    coordinate = fst $ oldMap ! piece
+    newBorder =
+      Set.add coordinate
+      . (`Set.difference` getNeighborsWithoutNeighbors newBoard coordinate)
+      $ oldBorder
 
 {- Board queries -}
+
+-- | Get the neighbors for a given coordinate that have no neighbors themselves.
+--
+-- Trivially the empty set if the given coordinate is occupied.
+getNeighborsWithoutNeighbors :: Board -> Coordinate -> Set Coordinate
+getNeighborsWithoutNeighbors board = Set.filter (not . hasNeighbors board) . getNeighborhood
 
 -- | Get the top-most piece and its height at the given coordinate.
 getPiece :: Board -> Coordinate -> Maybe (PlayerPiece, Int)
@@ -123,6 +138,11 @@ getSurroundingPieces :: Board -> Coordinate -> Set PlayerPiece
 getSurroundingPieces = catMaybesSet . toNeighborhood .: getSurrounding
 
 {- Board predicates -}
+
+-- | Return True if the coordinate has neighbors on the board (regardless of whether the coordinate
+-- itself is occupied).
+hasNeighbors :: Board -> Coordinate -> Bool
+hasNeighbors board = not . Set.null . getSurroundingPieces board
 
 -- | Return True if the given coordinate is occupied on the board.
 isOccupied :: Board -> Coordinate -> Bool
