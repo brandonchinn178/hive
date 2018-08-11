@@ -105,6 +105,8 @@ putPiece piece newSpot oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
 -- | Remove the given piece from the board.
 --
 -- Doesn't occur in an actual game, but useful for figuring out mechanics mid-move.
+--
+-- Satisfies @removePiece piece . putPiece piece coord = id@
 removePiece :: PlayerPiece -> Board -> Board
 removePiece piece oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
   newBoard { border = newBorder }
@@ -113,7 +115,7 @@ removePiece piece oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
     newBorder = case getCoordinate oldBoard piece of
       Nothing -> oldBorder
       Just coordinate ->
-        Set.insert coordinate
+        (if hasNeighbors oldBoard coordinate then Set.insert coordinate else id)
         . (`Set.difference` getNeighborsWithoutNeighbors newBoard coordinate)
         $ oldBorder
 
