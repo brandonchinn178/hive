@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -20,6 +21,7 @@ module Hive.Board
   , getSurroundingPieces
   -- * Board predicates
   , hasNeighbors
+  , isHive
   , isOccupied
   ) where
 
@@ -143,6 +145,19 @@ getSurroundingPieces = catMaybesSet . toNeighborhood .: getSurrounding
 -- itself is occupied).
 hasNeighbors :: Board -> Coordinate -> Bool
 hasNeighbors board = not . Set.null . getSurroundingPieces board
+
+-- | Return True if the board is a contiguous hive.
+isHive :: Board -> Bool
+isHive Board{pieceMap} = case occupiedSpots of
+  [] -> True -- nothing is on the board (e.g. the first round)
+  (x:xs) -> check [x] $ Set.fromList xs
+  where
+    occupiedSpots = Map.elems . Map.mapMaybe (fmap fst) $ pieceMap
+    check _ (Set.null -> True) = True
+    check [] _ = False
+    check (x:todo) rest =
+      let found = Set.intersection (getNeighborhood x) rest
+      in check (todo ++ Set.toList found) $ rest \\ found
 
 -- | Return True if the given coordinate is occupied on the board.
 isOccupied :: Board -> Coordinate -> Bool
