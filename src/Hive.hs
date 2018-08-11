@@ -120,6 +120,6 @@ getValidMoves board playerPiece@(player, _) = case getPosition board playerPiece
   Just pos -> getValidFrom pos
   where
     getValidSpotsOnBorder = Set.filter (not . isTouchingOpponent) $ getBorder (removePiece playerPiece board)
-    getValidFrom currPosition = undefined
+    getValidFrom _ = undefined
     -- Queries
     isTouchingOpponent coord = any ((/= player) . fst) $ getSurroundingPieces board coord
