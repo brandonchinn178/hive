@@ -44,6 +44,10 @@ aliases:
     run:
       name: Run hlint
       command: scripts/hlint.sh
+  - &run-stylish-haskell
+    run:
+      name: Run stylish-haskell
+      command: scripts/stylish-haskell.sh
 
 jobs:
   prebuild:
@@ -87,6 +91,17 @@ jobs:
           key: *cache-key
       - *run-hlint
 
+  stylish-haskell:
+    <<: *docker-linux
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - *install-stack
+      - restore_cache:
+          key: *cache-key
+      - *run-stylish-haskell
+
 workflows:
   version: 2
 
@@ -97,5 +112,8 @@ workflows:
           requires:
             - prebuild
       - hlint:
+          requires:
+            - build
+      - stylish-haskell:
           requires:
             - build
