@@ -14,15 +14,19 @@ module Hive.Board
   , putPiece
   , removePiece
   -- * Board queries
+  , getBorder
+  , getCoordinate
   , getNeighborsWithoutNeighbors
   , getPiece
   , getPiece'
+  , getPosition
   , getSurrounding
   , getSurroundingPieces
   -- * Board predicates
   , hasNeighbors
   , isHive
   , isOccupied
+  , isOnBoard
   ) where
 
 import Control.Monad ((<=<))
@@ -55,7 +59,7 @@ data Board = Board
   , border :: Set Coordinate
     -- ^ The empty spots around the board. Guaranteed to be up to date with pieceMap. Added as a
     -- separate field because it's easier to keep track as pieces are added than recomputing.
-  }
+  } deriving (Show)
 
 -- | The starting board for a Hive game.
 emptyBoard :: Board
@@ -92,9 +96,9 @@ putPiece piece coordinate oldBoard@Board{pieceMap = oldMap, border = oldBorder} 
     -- all unoccupied neighbors of new position
     unoccupiedNeighbors = Set.filter (not . isOccupied oldBoard) $ getNeighborhood coordinate
     -- all neighbors of previous position that don't have any other occupied neighbors
-    prevNeighbors = case oldMap ! piece of
+    prevNeighbors = case getCoordinate oldBoard piece of
       Nothing -> Set.empty
-      Just (prev, _) -> getNeighborsWithoutNeighbors newBoard prev
+      Just prev -> getNeighborsWithoutNeighbors newBoard prev
 
 -- | Remove the given piece from the board.
 --
@@ -104,14 +108,22 @@ removePiece piece oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
   newBoard { border = newBorder }
   where
     newBoard = oldBoard { pieceMap = Map.insert piece Nothing oldMap }
-    newBorder = case oldMap ! piece of
+    newBorder = case getCoordinate oldBoard piece of
       Nothing -> oldBorder
-      Just (fst -> coordinate) ->
+      Just coordinate ->
         Set.insert coordinate
         . (`Set.difference` getNeighborsWithoutNeighbors newBoard coordinate)
         $ oldBorder
 
 {- Board queries -}
+
+-- | Get the border of the board.
+getBorder :: Board -> Set Coordinate
+getBorder = border
+
+-- | Get the coordinate of the given piece.
+getCoordinate :: Board -> PlayerPiece -> Maybe Coordinate
+getCoordinate = fmap fst .: getPosition
 
 -- | Get the neighbors for a given coordinate that have no neighbors themselves.
 --
@@ -129,6 +141,10 @@ getPiece board = getTop <=< (coordinateMap board !?)
 -- | Get the top-most piece at the given coordinate.
 getPiece' :: Board -> Coordinate -> Maybe PlayerPiece
 getPiece' = fmap fst .: getPiece
+
+-- | Get the position of the given piece.
+getPosition :: Board -> PlayerPiece -> Maybe Position
+getPosition Board{pieceMap} = (pieceMap !)
 
 -- | Get the pieces in the surrounding coordinates for the given coordinate.
 getSurrounding :: Board -> Coordinate -> Neighbors (Maybe PlayerPiece)
@@ -161,6 +177,10 @@ isHive Board{pieceMap} = case occupiedSpots of
 -- | Return True if the given coordinate is occupied on the board.
 isOccupied :: Board -> Coordinate -> Bool
 isOccupied board = isJust . getPiece' board
+
+-- | Return True if the given piece is on the board.
+isOnBoard :: Board -> PlayerPiece -> Bool
+isOnBoard = isJust .: getPosition
 
 {- Helpers -}
 
