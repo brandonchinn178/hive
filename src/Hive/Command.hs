@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Hive.Command
   ( Command(..)
   ) where

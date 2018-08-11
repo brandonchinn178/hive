@@ -39,6 +39,12 @@ aliases:
       name: Build package
       command: stack build --test --no-run-tests
 
+  # test steps
+  - &run-hlint
+    run:
+      name: Run hlint
+      command: scripts/hlint.sh
+
 jobs:
   prebuild:
     <<: *docker-linux
@@ -70,6 +76,17 @@ jobs:
           paths:
               - .stack-work
 
+  hlint:
+    <<: *docker-linux
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - *install-stack
+      - restore_cache:
+          key: *cache-key
+      - *run-hlint
+
 workflows:
   version: 2
 
@@ -79,3 +96,6 @@ workflows:
       - build:
           requires:
             - prebuild
+      - hlint:
+          requires:
+            - build

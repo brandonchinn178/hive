@@ -83,7 +83,7 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
       , hiveRound = if isPlayerOne then hiveRound else hiveRound + 1
       }
     -- Queries
-    isPlayerOne = if player == One then True else False
+    isPlayerOne = player == One
     noBee = not $ isOnBoard board (player, Bee)
     isNextSpotOccupied = isJust nextSpotPiece
     -- Checks
