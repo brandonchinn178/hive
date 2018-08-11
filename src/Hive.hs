@@ -14,17 +14,20 @@ module Hive
   ) where
 
 import Control.Monad (unless, when)
-import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
+import Data.Maybe (fromJust, isJust)
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 import Hive.Board as X
 import Hive.Command as X
 import Hive.Coordinate as X
 import Hive.Piece as X
 import Hive.Player as X
+import qualified Hive.Utils.Set as Set
 
 -- | The state of a Hive game.
 data HiveState = HiveState
-  { board     :: HiveBoard
+  { board     :: Board
   , player    :: Player
   , hiveRound :: Int -- ^ Increments after both players have gone
   } deriving (Show)
@@ -47,9 +50,9 @@ getResult HiveState{board} = case (isDead One, isDead Two) of
   (True, False) -> Just $ Win Two
   (True, True) -> Just Draw
   where
-    isDead p = case getPosition board (p, Bee) of
+    isDead p = case getCoordinate board (p, Bee) of
       Nothing -> False
-      Just (beeCoordinates, _) -> length (getSurroundingPieces board beeCoordinates) == 6
+      Just beeCoordinates -> length (getSurroundingPieces board beeCoordinates) == 6
 
 data InvalidCommand
   = NeedToPlaceBee            -- ^ When it's round 4 and the bee has not been placed
@@ -70,14 +73,12 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
   where
     otherPlayer = if isPlayerOne then Two else One
     currPiece = (player, commandPiece)
-    currPosition = getPosition board currPiece
+    isCurrOnBoard = isOnBoard board currPiece
     nextSpotPiece = getPiece board commandPosition
     commandPieceType = pieceToType commandPiece
     -- Next state
-    nextHeight = fromMaybe 0 $ ((+ 1) . snd) <$> nextSpotPiece
-    nextPosition = (commandPosition, nextHeight)
     nextState = HiveState
-      { board = putPiece board currPiece nextPosition
+      { board = putPiece currPiece commandPosition board
       , player = otherPlayer
       , hiveRound = if isPlayerOne then hiveRound else hiveRound + 1
       }
@@ -91,34 +92,34 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
       else sequence_ [checkLeave, checkValidMovement]
     checkStart = do
       when (hiveRound == 3 && commandPiece /= Bee) $ Left NeedToPlaceBee
-      unless (isNothing currPosition) $ Left CannotMoveWithoutBee
+      unless (not isCurrOnBoard) $ Left CannotMoveWithoutBee
       when (hiveRound > 0) checkWillTouchOtherPlayer
-    checkLeave = case currPosition of
+    checkLeave = case getPosition board currPiece of
       Nothing -> return ()
       Just (coordinate, height) -> do
         let topMostHeight = snd $ fromJust $ getPiece board coordinate
         unless (height == topMostHeight) $ Left CannotMoveFromUnderneath
-        when (height == 0 && not (isHiveWithout board currPiece)) $ Left CannotBreakHive
-    checkValidMovement = case currPosition of
-      Nothing -> checkWillTouchOtherPlayer
-      Just _ -> do
+        when (height == 0 && not (isHive $ removePiece currPiece board)) $ Left CannotBreakHive
+    checkValidMovement = if isCurrOnBoard
+      then do
         unless (commandPieceType == BeetleType || not isNextSpotOccupied)
           $ Left CannotMoveToOccupied
-        unless (commandPosition `elem` getBorderWithout board currPiece) $ Left CannotMoveOffHive
+        unless (commandPosition `elem` getBorder (removePiece currPiece board)) $ Left CannotMoveOffHive
         unless (commandPosition `elem` getValidMoves board currPiece) $ Left ViolatesPieceRules
+      else checkWillTouchOtherPlayer
     checkWillTouchOtherPlayer = when
-      (any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
+      (Set.any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
       $ Left CannotAddNextToOpponent
 
 -- | Get all the valid moves for the given piece.
 --
 -- If the piece is not on the board, get the possible positions to put the piece.
-getValidMoves :: HiveBoard -> PlayerPiece -> [Coordinate]
+getValidMoves :: Board -> PlayerPiece -> Set Coordinate
 getValidMoves board playerPiece@(player, _) = case getPosition board playerPiece of
   Nothing -> getValidSpotsOnBorder
   Just pos -> getValidFrom pos
   where
-    getValidSpotsOnBorder = filter (not . isTouchingOpponent) $ getBorderWithout board playerPiece
+    getValidSpotsOnBorder = Set.filter (not . isTouchingOpponent) $ getBorder (removePiece playerPiece board)
     getValidFrom currPosition = undefined
     -- Queries
     isTouchingOpponent coord = any ((/= player) . fst) $ getSurroundingPieces board coord
