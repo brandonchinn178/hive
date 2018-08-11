@@ -85,22 +85,22 @@ coordinateMap = Map.map orderHeight . invert . Map.mapMaybe id . pieceMap
 
 -- | Add or move the given piece to the given coordinate.
 putPiece :: PlayerPiece -> Coordinate -> Board -> Board
-putPiece piece coordinate oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
+putPiece piece newSpot oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
   newBoard { border = newBorder }
   where
-    newBoard = oldBoard { pieceMap = Map.insert piece (Just (coordinate, height)) oldMap }
-    height = maybe 0 ((+ 1) . snd) $ getPiece oldBoard coordinate
+    oldSpot = getCoordinate oldBoard piece
+    newBoard = oldBoard { pieceMap = Map.insert piece (Just (newSpot, height)) oldMap }
+    height = maybe 0 ((+ 1) . snd) $ getPiece oldBoard newSpot
     newBorder =
-      Set.delete coordinate
+      Set.delete newSpot
+      . Set.union (Set.fromMaybe oldSpot)
       . Set.union unoccupiedNeighbors
       . (`Set.difference` prevNeighbors)
       $ oldBorder
     -- all unoccupied neighbors of new position
-    unoccupiedNeighbors = Set.filter (not . isOccupied oldBoard) $ getNeighborhood coordinate
+    unoccupiedNeighbors = Set.filter (not . isOccupied oldBoard) $ getNeighborhood newSpot
     -- all neighbors of previous position that don't have any other occupied neighbors
-    prevNeighbors = case getCoordinate oldBoard piece of
-      Nothing -> Set.empty
-      Just prev -> getNeighborsWithoutNeighbors newBoard prev
+    prevNeighbors = maybe Set.empty (getNeighborsWithoutNeighbors newBoard) oldSpot
 
 -- | Remove the given piece from the board.
 --

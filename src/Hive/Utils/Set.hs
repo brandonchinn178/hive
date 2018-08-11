@@ -1,6 +1,7 @@
 module Hive.Utils.Set
   ( any
   , catMaybes
+  , fromMaybe
   ) where
 
 import Data.Maybe (fromJust, isJust)
@@ -13,3 +14,6 @@ any f = not . Set.null . Set.filter f
 
 catMaybes :: Ord a => Set (Maybe a) -> Set a
 catMaybes = Set.map fromJust . Set.filter isJust
+
+fromMaybe :: Maybe a -> Set a
+fromMaybe = maybe Set.empty Set.singleton
