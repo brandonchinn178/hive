@@ -23,6 +23,7 @@ import Hive.Command as X
 import Hive.Coordinate as X
 import Hive.Piece as X
 import Hive.Player as X
+import qualified Hive.Utils.Set as Set
 
 -- | The state of a Hive game.
 data HiveState = HiveState
@@ -107,7 +108,7 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
         unless (commandPosition `elem` getValidMoves board currPiece) $ Left ViolatesPieceRules
       else checkWillTouchOtherPlayer
     checkWillTouchOtherPlayer = when
-      (anySet ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
+      (Set.any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
       $ Left CannotAddNextToOpponent
 
 -- | Get all the valid moves for the given piece.
@@ -122,9 +123,3 @@ getValidMoves board playerPiece@(player, _) = case getPosition board playerPiece
     getValidFrom currPosition = undefined
     -- Queries
     isTouchingOpponent coord = any ((/= player) . fst) $ getSurroundingPieces board coord
-
-{- Helpers -}
-
--- | 'any' for sets.
-anySet :: Ord a => (a -> Bool) -> Set a -> Bool
-anySet f = not . Set.null . Set.filter f

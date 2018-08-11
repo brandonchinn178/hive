@@ -34,13 +34,14 @@ import Data.Function (on)
 import Data.List (sortBy)
 import Data.Map.Strict (Map, (!), (!?))
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (isJust)
 import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
 import Hive.Coordinate (Coordinate, Neighbors, getNeighborhood, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
+import qualified Hive.Utils.Set as Set
 
 {- Auxiliary types -}
 
@@ -152,7 +153,7 @@ getSurrounding board = fmap (getPiece' board) . getNeighbors
 
 -- | Get the surrounding pieces for the given coordinate.
 getSurroundingPieces :: Board -> Coordinate -> Set PlayerPiece
-getSurroundingPieces = catMaybesSet . toNeighborhood .: getSurrounding
+getSurroundingPieces = Set.catMaybes . toNeighborhood .: getSurrounding
 
 {- Board predicates -}
 
@@ -183,10 +184,6 @@ isOnBoard :: Board -> PlayerPiece -> Bool
 isOnBoard = isJust .: getPosition
 
 {- Helpers -}
-
--- | 'catMaybes' for Set
-catMaybesSet :: Ord a => Set (Maybe a) -> Set a
-catMaybesSet = Set.map fromJust . Set.filter isJust
 
 (.:) :: (z -> c) -> (a -> b -> z) -> a -> b -> c
 (.:) = (.) . (.)
