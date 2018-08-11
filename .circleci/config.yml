@@ -23,6 +23,7 @@ aliases:
         FILES=(
           stack.yaml
           package.yaml
+          scripts/install-stack-deps.sh
         )
         cat "${FILES[@]}" > cache-key.txt
   - &cache-key
