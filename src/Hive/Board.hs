@@ -1,6 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -17,19 +15,22 @@ module Hive.Board
   -- * Board queries
   , getPiece
   , getPiece'
+  , getSurrounding
+  , getSurroundingPieces
+  -- * Board predicates
   , isOccupied
   ) where
 
 import Control.Monad (join, (<=<))
 import Data.Function (on)
 import Data.List (nub, sortBy)
-import Data.Map.Strict (Map, (!?))
+import Data.Map.Strict (Map, (!), (!?))
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes, isJust)
+import Data.Maybe (catMaybes, fromJust, isJust)
 import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
-import Hive.Coordinate (Coordinate, Neighbors, getNeighbors, getNeighbors', toNeighborhood)
+import Hive.Coordinate (Coordinate, Neighbors, getNeighborhood, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 
@@ -74,22 +75,25 @@ coordinateMap = Map.map orderHeight . invert . Map.mapMaybe id . pieceMap
 
 -- | Add or move the given piece to the given coordinate.
 putPiece :: PlayerPiece -> Coordinate -> Board -> Board
-putPiece piece coordinate board@Board{..} = board
-  { pieceMap = Map.insert piece (Just (coordinate, height)) pieceMap
+putPiece piece coordinate board@Board{pieceMap = oldMap, border = oldBorder} = board
+  { pieceMap = newMap
   , border = newBorder
   }
   where
-    height = maybe 0 (+ 1) heightAtCoordinate
-    heightAtCoordinate = snd <$> getPiece board coordinate
+    newMap = Map.insert piece (Just (coordinate, height)) oldMap
+    height = maybe 0 ((+ 1) . snd) $ getPiece board coordinate
     newBorder =
       Set.delete coordinate
       . Set.union unoccupiedNeighbors
       . (`Set.difference` prevNeighbors)
-      $ border
+      $ oldBorder
     -- all unoccupied neighbors of new position
-    unoccupiedNeighbors = Set.filter (not . isOccupied board) $ getNeighbors' coordinate
-    -- all neighbors of previous position that don't have any occupied neighbors
-    prevNeighbors = undefined
+    unoccupiedNeighbors = Set.filter (not . isOccupied board) $ getNeighborhood coordinate
+    -- all neighbors of previous position that don't have any other occupied neighbors
+    prevNeighbors = case oldMap ! piece of
+      Nothing -> Set.empty
+      Just (prev, _) -> Set.filter noNeighbors $ getNeighborhood prev
+    noNeighbors = Set.null . getSurroundingPieces board
 
 -- | Remove the given piece from the board.
 --
@@ -109,6 +113,16 @@ getPiece board = getTop <=< (coordinateMap board !?)
 -- | Get the top-most piece at the given coordinate.
 getPiece' :: Board -> Coordinate -> Maybe PlayerPiece
 getPiece' = fmap fst .: getPiece
+
+-- | Get the pieces in the surrounding coordinates for the given coordinate.
+getSurrounding :: Board -> Coordinate -> Neighbors (Maybe PlayerPiece)
+getSurrounding board = fmap (getPiece' board) . getNeighbors
+
+-- | Get the surrounding pieces for the given coordinate.
+getSurroundingPieces :: Board -> Coordinate -> Set PlayerPiece
+getSurroundingPieces = catMaybesSet . toNeighborhood .: getSurrounding
+
+{- Board predicates -}
 
 -- | Return True if the given coordinate is occupied on the board.
 isOccupied :: Board -> Coordinate -> Bool
@@ -168,14 +182,6 @@ getPiece board = (`Map.lookup` getFlippedBoard board) >=> getTop
 getPiece' :: BoardLike b => b -> Coordinate -> Maybe PlayerPiece
 getPiece' = fmap fst .: getPiece
 
--- | Get the pieces in the surrounding coordinates for the given coordinate.
-getSurrounding :: BoardLike b => b -> Coordinate -> Neighbors (Maybe PlayerPiece)
-getSurrounding board = fmap (getPiece' board) . getNeighbors
-
--- | Get the surrounding pieces for the given coordinate.
-getSurroundingPieces :: BoardLike b => b -> Coordinate -> [PlayerPiece]
-getSurroundingPieces = catMaybes . toNeighborhood .: getSurrounding
-
 -- | Get the coordinates around the hive without the given piece.
 getBorderWithout :: BoardLike b => b -> PlayerPiece -> [Coordinate]
 getBorderWithout (toBoard -> board) piece =
@@ -185,6 +191,10 @@ getBorderWithout (toBoard -> board) piece =
     getAllNeighbors = nub . concatMap getNeighbors'
 
 {- Helpers -}
+
+-- | 'catMaybes' for Set
+catMaybesSet :: Set (Maybe a) -> Set a
+catMaybesSet = Set.map fromJust . Set.filter isJust
 
 (.:) :: (z -> c) -> (a -> b -> z) -> a -> b -> c
 (.:) = (.) . (.)

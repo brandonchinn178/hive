@@ -5,8 +5,8 @@ module Hive.Coordinate
   ( Coordinate
   , Neighbors(..)
   , getNeighbors
-  , getNeighbors'
   , toNeighborhood
+  , getNeighborhood
   ) where
 
 import Data.Set (Set)
@@ -51,10 +51,11 @@ getNeighbors (x, y) = Neighbors
   , northwest = (x - 1, y)
   }
 
--- | Get the coordinates surrounding the given coordinate, without caring about order.
-getNeighbors' :: Coordinate -> Set Coordinate
-getNeighbors' = Set.fromList . toNeighborhood . getNeighbors
+-- | Convert neighbors to a set.
+toNeighborhood :: Ord a => Neighbors a -> Set a
+toNeighborhood Neighbors{..} = Set.fromList
+  [north, northeast, southeast, south, southwest, northwest]
 
--- | Convert neighbors to a list.
-toNeighborhood :: Neighbors a -> [a]
-toNeighborhood Neighbors{..} = [north, northeast, southeast, south, southwest, northwest]
+-- | Get the coordinates surrounding the given coordinate, without caring about order.
+getNeighborhood :: Coordinate -> Set Coordinate
+getNeighborhood = toNeighborhood . getNeighbors
