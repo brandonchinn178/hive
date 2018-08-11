@@ -41,6 +41,7 @@ import qualified Data.Set as Set
 import Hive.Coordinate (Coordinate, Neighbors, getNeighborhood, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
+import Hive.Utils.Composition ((.:))
 import qualified Hive.Utils.Set as Set
 
 {- Auxiliary types -}
@@ -182,9 +183,3 @@ isOccupied board = isJust . getPiece' board
 -- | Return True if the given piece is on the board.
 isOnBoard :: Board -> PlayerPiece -> Bool
 isOnBoard = isJust .: getPosition
-
-{- Helpers -}
-
-(.:) :: (z -> c) -> (a -> b -> z) -> a -> b -> c
-(.:) = (.) . (.)
-infixl 4 .: -- same fixity as <$>
