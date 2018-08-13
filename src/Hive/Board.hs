@@ -38,7 +38,8 @@ import Data.Maybe (isJust)
 import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
-import Hive.Coordinate (Coordinate, Neighbors, getNeighborhood, getNeighbors, toNeighborhood)
+import Hive.Coordinate
+    (Coordinate, Neighbors, getNeighborhood, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 import Hive.Utils.Composition ((.:))
@@ -58,7 +59,7 @@ type Position = (Coordinate, Int)
 data Board = Board
   { pieceMap :: Map PlayerPiece (Maybe Position)
     -- ^ Nothing = piece not on board yet. Guaranteed to contain all the pieces for each player.
-  , border :: Set Coordinate
+  , border   :: Set Coordinate
     -- ^ The empty spots around the board. Guaranteed to be up to date with pieceMap. Added as a
     -- separate field because it's easier to keep track as pieces are added than recomputing.
   } deriving (Show)

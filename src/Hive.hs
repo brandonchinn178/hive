@@ -83,7 +83,7 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
       , hiveRound = if isPlayerOne then hiveRound else hiveRound + 1
       }
     -- Queries
-    isPlayerOne = if player == One then True else False
+    isPlayerOne = player == One
     noBee = not $ isOnBoard board (player, Bee)
     isNextSpotOccupied = isJust nextSpotPiece
     -- Checks
@@ -120,6 +120,6 @@ getValidMoves board playerPiece@(player, _) = case getPosition board playerPiece
   Just pos -> getValidFrom pos
   where
     getValidSpotsOnBorder = Set.filter (not . isTouchingOpponent) $ getBorder (removePiece playerPiece board)
-    getValidFrom currPosition = undefined
+    getValidFrom _ = undefined
     -- Queries
     isTouchingOpponent coord = any ((/= player) . fst) $ getSurroundingPieces board coord
