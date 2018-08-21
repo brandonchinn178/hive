@@ -120,17 +120,18 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
 --
 -- If the piece is not on the board, get the possible positions to put the piece.
 getValidMoves :: Board -> PlayerPiece -> Set Coordinate
-getValidMoves board playerPiece@(player, _) =
+getValidMoves board playerPiece@(player, piece) =
   case getPosition board playerPiece of
-    Nothing -> getValidSpotsOnBorder
+    Nothing -> Set.filter (not . isTouchingOpponent) borderSpots
     Just pos -> getValidFrom pos
   where
-    getValidSpotsOnBorder =
-      Set.filter (not . isTouchingOpponent)
-      . getBorder
-      . removePiece playerPiece
-      $ board
-    getValidFrom _ = undefined
+    borderSpots = getBorder . removePiece playerPiece $ board
+    getValidFrom (coord, _) = case pieceToType piece of
+      BeeType -> Set.intersection borderSpots $ getNeighborhood coord
+      AntType -> undefined
+      GrasshopperType -> undefined
+      BeetleType -> undefined
+      SpiderType -> undefined
     -- Queries
     isTouchingOpponent coord =
       any ((/= player) . fst) $ getSurroundingPieces board coord
