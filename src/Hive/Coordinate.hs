@@ -56,6 +56,7 @@ toNeighborhood :: Ord a => Neighbors a -> Set a
 toNeighborhood Neighbors{..} = Set.fromList
   [north, northeast, southeast, south, southwest, northwest]
 
--- | Get the coordinates surrounding the given coordinate, without caring about order.
+-- | Get the coordinates surrounding the given coordinate, without caring about
+-- order.
 getNeighborhood :: Coordinate -> Set Coordinate
 getNeighborhood = toNeighborhood . getNeighbors

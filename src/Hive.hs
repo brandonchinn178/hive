@@ -13,7 +13,7 @@ module Hive
   , getValidMoves
   ) where
 
-import Control.Monad (unless, when)
+import Control.Monad (when)
 import Data.Maybe (fromJust, isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -52,18 +52,18 @@ getResult HiveState{board} = case (isDead One, isDead Two) of
   where
     isDead p = case getCoordinate board (p, Bee) of
       Nothing -> False
-      Just beeCoordinates -> length (getSurroundingPieces board beeCoordinates) == 6
+      Just beeCoords -> length (getSurroundingPieces board beeCoords) == 6
 
 data InvalidCommand
   = NeedToPlaceBee            -- ^ When it's round 4 and the bee has not been placed
-  | CannotMoveWithoutBee      -- ^ When the bee isn't on the board yet and player tries to move
-  | CannotMoveFromUnderneath  -- ^ When the player tries to move piece under a stack
-  | CannotMoveToOccupied      -- ^ When the player tries to move into an occupied spot (not beetle)
-  | CannotMoveOffHive         -- ^ When the player tries to move a piece off the hive
-  | CannotAddNextToOpponent   -- ^ When the player tries to add a piece next to an opponent's piece
-  | ViolatesFreedomOfMovement -- ^ When the player tries to violate "freedom of movement"
-  | CannotBreakHive           -- ^ When the player tries to move a piece that would break the hive
-  | ViolatesPieceRules        -- ^ When the player tries to move a piece contrary to its type
+  | CannotMoveWithoutBee      -- ^ When trying to move before the bee is placed
+  | CannotMoveFromUnderneath  -- ^ When trying to move piece under a stack
+  | CannotMoveToOccupied      -- ^ When trying to move into an occupied spot (not beetle)
+  | CannotMoveOffHive         -- ^ When trying to move a piece off the hive
+  | CannotAddNextToOpponent   -- ^ When trying to add a piece next to an opponent's piece
+  | ViolatesFreedomOfMovement -- ^ When trying to violate "freedom of movement"
+  | CannotBreakHive           -- ^ When trying to move a piece that would break the hive
+  | ViolatesPieceRules        -- ^ When trying to move a piece contrary to its type
   deriving (Show)
 
 -- | Determine the next state of the board. Error checks the command
@@ -87,39 +87,50 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
     noBee = not $ isOnBoard board (player, Bee)
     isNextSpotOccupied = isJust nextSpotPiece
     -- Checks
+    errWhen = flip when . Left
+    errUnless e = errWhen e . not
     checkValid = if hiveRound < 4 && noBee
       then checkStart
       else sequence_ [checkLeave, checkValidMovement]
     checkStart = do
-      when (hiveRound == 3 && commandPiece /= Bee) $ Left NeedToPlaceBee
-      unless (not isCurrOnBoard) $ Left CannotMoveWithoutBee
+      errWhen NeedToPlaceBee $ hiveRound == 3 && commandPiece /= Bee
+      errUnless CannotMoveWithoutBee $ not isCurrOnBoard
       when (hiveRound > 0) checkWillTouchOtherPlayer
     checkLeave = case getPosition board currPiece of
       Nothing -> return ()
       Just (coordinate, height) -> do
         let topMostHeight = snd $ fromJust $ getPiece board coordinate
-        unless (height == topMostHeight) $ Left CannotMoveFromUnderneath
-        when (height == 0 && not (isHive $ removePiece currPiece board)) $ Left CannotBreakHive
+        errUnless CannotMoveFromUnderneath $ height == topMostHeight
+        errWhen CannotBreakHive $
+          height == 0 && not (isHive $ removePiece currPiece board)
     checkValidMovement = if isCurrOnBoard
       then do
-        unless (commandPieceType == BeetleType || not isNextSpotOccupied)
-          $ Left CannotMoveToOccupied
-        unless (commandPosition `elem` getBorder (removePiece currPiece board)) $ Left CannotMoveOffHive
-        unless (commandPosition `elem` getValidMoves board currPiece) $ Left ViolatesPieceRules
+        errUnless CannotMoveToOccupied $
+          commandPieceType == BeetleType || not isNextSpotOccupied
+        errUnless CannotMoveOffHive $
+          commandPosition `elem` getBorder (removePiece currPiece board)
+        errUnless ViolatesPieceRules $
+          commandPosition `elem` getValidMoves board currPiece
       else checkWillTouchOtherPlayer
-    checkWillTouchOtherPlayer = when
-      (Set.any ((== otherPlayer) . fst) $ getSurroundingPieces board commandPosition)
-      $ Left CannotAddNextToOpponent
+    checkWillTouchOtherPlayer = errWhen CannotAddNextToOpponent $
+      Set.any ((== otherPlayer) . fst) $
+        getSurroundingPieces board commandPosition
 
 -- | Get all the valid moves for the given piece.
 --
 -- If the piece is not on the board, get the possible positions to put the piece.
 getValidMoves :: Board -> PlayerPiece -> Set Coordinate
-getValidMoves board playerPiece@(player, _) = case getPosition board playerPiece of
-  Nothing -> getValidSpotsOnBorder
-  Just pos -> getValidFrom pos
+getValidMoves board playerPiece@(player, _) =
+  case getPosition board playerPiece of
+    Nothing -> getValidSpotsOnBorder
+    Just pos -> getValidFrom pos
   where
-    getValidSpotsOnBorder = Set.filter (not . isTouchingOpponent) $ getBorder (removePiece playerPiece board)
+    getValidSpotsOnBorder =
+      Set.filter (not . isTouchingOpponent)
+      . getBorder
+      . removePiece playerPiece
+      $ board
     getValidFrom _ = undefined
     -- Queries
-    isTouchingOpponent coord = any ((/= player) . fst) $ getSurroundingPieces board coord
+    isTouchingOpponent coord =
+      any ((/= player) . fst) $ getSurroundingPieces board coord

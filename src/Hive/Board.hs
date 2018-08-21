@@ -50,7 +50,8 @@ import qualified Hive.Utils.Set as Set
 -- | A piece on the board and the player that owns the piece.
 type PlayerPiece = (Player, Piece)
 
--- | A coordinate with a value for the height on the board (e.g. beetle stacks), with 0 = bottom.
+-- | A coordinate with a value for the height on the board (e.g. beetle stacks),
+-- with 0 = bottom.
 type Position = (Coordinate, Int)
 
 {- Board type -}
@@ -58,10 +59,12 @@ type Position = (Coordinate, Int)
 -- | The data type representing the board of a game of Hive.
 data Board = Board
   { pieceMap :: Map PlayerPiece (Maybe Position)
-    -- ^ Nothing = piece not on board yet. Guaranteed to contain all the pieces for each player.
+    -- ^ Nothing = piece not on board yet. Guaranteed to contain all the pieces
+    -- for each player.
   , border   :: Set Coordinate
-    -- ^ The empty spots around the board. Guaranteed to be up to date with pieceMap. Added as a
-    -- separate field because it's easier to keep track as pieces are added than recomputing.
+    -- ^ The empty spots around the board. Guaranteed to be up to date with
+    -- pieceMap. Added as a separate field because it's easier to keep track as
+    -- pieces are added than recomputing.
   } deriving (Show)
 
 -- | The starting board for a Hive game.
@@ -72,8 +75,8 @@ emptyBoard = Board
   , border = Set.empty
   }
 
--- | A map from Coordinate to a list of PlayerPieces, where the head of the list is the top-most
--- piece at that Coordinate.
+-- | A map from Coordinate to a list of PlayerPieces, where the head of the list
+-- is the top-most piece at that Coordinate.
 coordinateMap :: Board -> Map Coordinate [PlayerPiece]
 coordinateMap = Map.map orderHeight . invert . Map.mapMaybe id . pieceMap
   where
@@ -90,7 +93,9 @@ putPiece piece newSpot oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
   newBoard { border = newBorder }
   where
     oldSpot = getCoordinate oldBoard piece
-    newBoard = oldBoard { pieceMap = Map.insert piece (Just (newSpot, height)) oldMap }
+    newBoard = oldBoard
+      { pieceMap = Map.insert piece (Just (newSpot, height)) oldMap
+      }
     height = maybe 0 ((+ 1) . snd) $ getPiece oldBoard newSpot
     newBorder =
       Set.delete newSpot
@@ -99,13 +104,17 @@ putPiece piece newSpot oldBoard@Board{pieceMap = oldMap, border = oldBorder} =
       . (`Set.difference` prevNeighbors)
       $ oldBorder
     -- all unoccupied neighbors of new position
-    unoccupiedNeighbors = Set.filter (not . isOccupied oldBoard) $ getNeighborhood newSpot
-    -- all neighbors of previous position that don't have any other occupied neighbors
-    prevNeighbors = maybe Set.empty (getNeighborsWithoutNeighbors newBoard) oldSpot
+    unoccupiedNeighbors =
+      Set.filter (not . isOccupied oldBoard) $ getNeighborhood newSpot
+    -- all neighbors of previous position that don't have any other occupied
+    -- neighbors
+    prevNeighbors =
+      maybe Set.empty (getNeighborsWithoutNeighbors newBoard) oldSpot
 
 -- | Remove the given piece from the board.
 --
--- Doesn't occur in an actual game, but useful for figuring out mechanics mid-move.
+-- Doesn't occur in an actual game, but useful for figuring out mechanics
+-- mid-move.
 --
 -- Satisfies @removePiece piece . putPiece piece coord = id@
 removePiece :: PlayerPiece -> Board -> Board
@@ -134,7 +143,8 @@ getCoordinate = fmap fst .: getPosition
 --
 -- Trivially the empty set if the given coordinate is occupied.
 getNeighborsWithoutNeighbors :: Board -> Coordinate -> Set Coordinate
-getNeighborsWithoutNeighbors board = Set.filter (not . hasNeighbors board) . getNeighborhood
+getNeighborsWithoutNeighbors board =
+  Set.filter (not . hasNeighbors board) . getNeighborhood
 
 -- | Get the top-most piece and its height at the given coordinate.
 getPiece :: Board -> Coordinate -> Maybe (PlayerPiece, Int)
@@ -161,8 +171,8 @@ getSurroundingPieces = Set.catMaybes . toNeighborhood .: getSurrounding
 
 {- Board predicates -}
 
--- | Return True if the coordinate has neighbors on the board (regardless of whether the coordinate
--- itself is occupied).
+-- | Return True if the coordinate has neighbors on the board (regardless of
+-- whether the coordinate itself is occupied).
 hasNeighbors :: Board -> Coordinate -> Bool
 hasNeighbors board = not . Set.null . getSurroundingPieces board
 
