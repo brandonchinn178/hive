@@ -43,12 +43,12 @@ data Neighbors a = Neighbors
 -- | Get the coordinates surrounding the given coordinate.
 getNeighbors :: Coordinate -> Neighbors Coordinate
 getNeighbors (x, y) = Neighbors
-  { north = (x, y + 1)
+  { north     = (x    , y + 1)
   , northeast = (x + 1, y + 1)
-  , southeast = (x + 1, y)
-  , south = (x, y - 1)
+  , southeast = (x + 1, y    )
+  , south     = (x    , y - 1)
   , southwest = (x - 1, y - 1)
-  , northwest = (x - 1, y)
+  , northwest = (x - 1, y    )
   }
 
 -- | Convert neighbors to a set.

@@ -17,9 +17,11 @@ module Hive.Board
   , getBorder
   , getCoordinate
   , getNeighborsWithoutNeighbors
+  , getOccupied
   , getPiece
   , getPiece'
   , getPosition
+  , getReachableSpots
   , getSurrounding
   , getSurroundingPieces
   -- * Board predicates
@@ -39,7 +41,7 @@ import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
 import Hive.Coordinate
-    (Coordinate, Neighbors, getNeighborhood, getNeighbors, toNeighborhood)
+  (Coordinate, Neighbors(..), getNeighborhood, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 import Hive.Utils.Composition ((.:))
@@ -146,6 +148,10 @@ getNeighborsWithoutNeighbors :: Board -> Coordinate -> Set Coordinate
 getNeighborsWithoutNeighbors board =
   Set.filter (not . hasNeighbors board) . getNeighborhood
 
+-- | Get all occupied spots on the board.
+getOccupied :: Board -> Set Position
+getOccupied = Set.fromList . Map.elems . Map.mapMaybe id . pieceMap
+
 -- | Get the top-most piece and its height at the given coordinate.
 getPiece :: Board -> Coordinate -> Maybe (PlayerPiece, Int)
 getPiece board = getTop <=< (coordinateMap board !?)
@@ -160,6 +166,41 @@ getPiece' = fmap fst .: getPiece
 -- | Get the position of the given piece.
 getPosition :: Board -> PlayerPiece -> Maybe Position
 getPosition Board{pieceMap} = (pieceMap !)
+
+-- | Get reachable border spots from the given location.
+--
+-- Used for freedom of movement calculations.
+getReachableSpots :: Board -> Coordinate -> Set Coordinate
+getReachableSpots board@Board{border} c = search [c] Set.empty Set.empty
+  where
+    occupied = Set.map fst $ getOccupied board
+    search :: [Coordinate] -> Set Coordinate -> Set Coordinate -> Set Coordinate
+    search [] _ cs = cs
+    search (x:xs) seen cs =
+      let neighbors = getNeighbors x
+          occupiedNeighbors = (`Set.member` occupied) <$> neighbors
+          -- if none of the blocking spots are occupied, then the target spot
+          -- is empty and free to move into
+          check target (dest, blockers) =
+            if dest occupiedNeighbors || all ($ occupiedNeighbors) blockers
+              then Nothing
+              else Just $ target neighbors
+          availableSpots = Set.catMaybes . toNeighborhood $ Neighbors
+            { north     = check north     (north, [northwest, northeast])
+            , northeast = check northeast (northeast, [north, southeast])
+            , southeast = check southeast (southeast, [south, northeast])
+            , south     = check south     (south, [southwest, southeast])
+            , southwest = check southwest (southwest, [south, northwest])
+            , northwest = check northwest (northwest, [north, southwest])
+            }
+          newSpots =
+            Set.intersection border
+            . Set.difference availableSpots
+            $ seen
+      in search
+          (xs ++ Set.toList newSpots)
+          (Set.insert x seen)
+          (Set.union cs newSpots)
 
 -- | Get the pieces in the surrounding coordinates for the given coordinate.
 getSurrounding :: Board -> Coordinate -> Neighbors (Maybe PlayerPiece)
@@ -178,11 +219,10 @@ hasNeighbors board = not . Set.null . getSurroundingPieces board
 
 -- | Return True if the board is a contiguous hive.
 isHive :: Board -> Bool
-isHive Board{pieceMap} = case occupiedSpots of
+isHive board = case fmap fst $ Set.toList $ getOccupied board of
   [] -> True -- nothing is on the board (e.g. the first round)
   (x:xs) -> check [x] $ Set.fromList xs
   where
-    occupiedSpots = Map.elems . Map.mapMaybe (fmap fst) $ pieceMap
     check _ (Set.null -> True) = True
     check [] _ = False
     check (x:todo) rest =
