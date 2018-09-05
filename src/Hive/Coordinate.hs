@@ -7,6 +7,7 @@ module Hive.Coordinate
   , getNeighbors
   , toNeighborhood
   , getNeighborhood
+  , isStraightLine
   ) where
 
 import Data.Set (Set)
@@ -60,3 +61,10 @@ toNeighborhood Neighbors{..} = Set.fromList
 -- order.
 getNeighborhood :: Coordinate -> Set Coordinate
 getNeighborhood = toNeighborhood . getNeighbors
+
+-- | Return True if the given coordinates are in a straight line.
+isStraightLine :: Coordinate -> Coordinate -> Bool
+isStraightLine (x1, y1) (x2, y2) = dy == 0 || dx == 0 || abs dy == abs dx
+  where
+    dy = y2 - y1
+    dx = x2 - x1

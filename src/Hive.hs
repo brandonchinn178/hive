@@ -134,7 +134,7 @@ getValidMoves board playerPiece@(player, piece) =
           . Set.intersection borderSpots
           $ getNeighborhood coord
         AntType -> Set.intersection reachableSpots borderSpots
-        GrasshopperType -> undefined
+        GrasshopperType -> Set.filter (isStraightLine coord) borderSpots
         BeetleType -> undefined
         SpiderType -> undefined
     -- Queries
