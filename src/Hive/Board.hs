@@ -174,7 +174,6 @@ getReachableSpots :: Board -> Coordinate -> Set Coordinate
 getReachableSpots board@Board{border} c = search [c] Set.empty Set.empty
   where
     occupied = Set.map fst $ getOccupied board
-    search :: [Coordinate] -> Set Coordinate -> Set Coordinate -> Set Coordinate
     search [] _ cs = cs
     search (x:xs) seen cs =
       let neighbors = getNeighbors x
