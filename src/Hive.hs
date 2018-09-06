@@ -128,14 +128,18 @@ getValidMoves board playerPiece@(player, piece) =
     borderSpots = getBorder . removePiece playerPiece $ board
     getValidFrom (coord, _) =
       let reachableSpots = getReachableSpots board coord
+          neighborhood = getNeighborhood coord
+          beeMoves =
+            Set.intersection reachableSpots
+            . Set.intersection borderSpots
+            $ neighborhood
       in case pieceToType piece of
-        BeeType ->
-          Set.intersection reachableSpots
-          . Set.intersection borderSpots
-          $ getNeighborhood coord
+        BeeType -> beeMoves
         AntType -> Set.intersection reachableSpots borderSpots
         GrasshopperType -> Set.filter (isStraightLine coord) borderSpots
-        BeetleType -> undefined
+        BeetleType -> Set.union
+          (Set.filter (isJust . getPiece' board) neighborhood)
+          beeMoves
         SpiderType -> undefined
     -- Queries
     isTouchingOpponent coord =
