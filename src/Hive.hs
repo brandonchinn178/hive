@@ -142,7 +142,7 @@ getValidMoves board playerPiece@(player, piece) =
         AntType -> getReachableSpots' Nothing
         GrasshopperType -> Set.filter (isStraightLine coord) borderSpots
         BeetleType -> Set.union occupiedNeighbors availableNeighbors
-        SpiderType -> undefined
+        SpiderType -> getReachableSpots' $ Just 3
     -- Queries
     isTouchingOpponent coord =
       any ((/= player) . fst) $ getSurroundingPieces board coord
