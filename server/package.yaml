@@ -1,0 +1,15 @@
+name: hive-server
+version: 0.0.1
+author: Brandon Chinn
+
+ghc-options: -Wall -Werror
+
+dependencies:
+  - base
+
+library:
+  source-dirs:  src
+
+executable:
+  source-dirs:  exe
+  main:         Main.hs
