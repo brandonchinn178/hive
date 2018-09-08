@@ -4,8 +4,9 @@ author: Brandon Chinn
 
 ghc-options: -Wall -Werror
 
+dependencies:
+  - base
+  - containers
+
 library:
   source-dirs: src
-  dependencies:
-    - base
-    - containers
