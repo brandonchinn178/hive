@@ -13,7 +13,7 @@ module Hive
   , getValidMoves
   ) where
 
-import Control.Monad (when)
+import Control.Monad (unless, when)
 import Data.Maybe (fromJust, isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -66,6 +66,17 @@ data InvalidCommand
   | ViolatesPieceRules        -- ^ When trying to move a piece contrary to its type
   deriving (Show)
 
+-- | Check if the given piece can move at all; e.g. not under a stack and
+-- doesn't break the hive.
+checkCanMove :: Board -> PlayerPiece -> Either InvalidCommand ()
+checkCanMove board piece = case getPosition board piece of
+  Nothing -> return ()
+  Just (coordinate, height) -> do
+    let topMostHeight = snd $ fromJust $ getPiece board coordinate
+    unless (height == topMostHeight) $ Left CannotMoveFromUnderneath
+    when (height == 0 && not (isHive $ removePiece piece board)) $
+      Left CannotBreakHive
+
 -- | Determine the next state of the board. Error checks the command
 -- for invalid commands, such as moving the opponent's piece.
 updateState :: HiveState -> Command -> Either InvalidCommand HiveState
@@ -91,18 +102,11 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
     errUnless e = errWhen e . not
     checkValid = if hiveRound < 4 && noBee
       then checkStart
-      else sequence_ [checkLeave, checkValidMovement]
+      else sequence_ [checkCanMove board currPiece, checkValidMovement]
     checkStart = do
       errWhen NeedToPlaceBee $ hiveRound == 3 && commandPiece /= Bee
       errUnless CannotMoveWithoutBee $ not isCurrOnBoard
       when (hiveRound > 0) checkWillTouchOtherPlayer
-    checkLeave = case getPosition board currPiece of
-      Nothing -> return ()
-      Just (coordinate, height) -> do
-        let topMostHeight = snd $ fromJust $ getPiece board coordinate
-        errUnless CannotMoveFromUnderneath $ height == topMostHeight
-        errWhen CannotBreakHive $
-          height == 0 && not (isHive $ removePiece currPiece board)
     checkValidMovement = if isCurrOnBoard
       then do
         errUnless CannotMoveToOccupied $
@@ -118,19 +122,27 @@ updateState HiveState{..} Command{..} = checkValid >> pure nextState
 
 -- | Get all the valid moves for the given piece.
 --
--- If the piece is not on the board, get the possible positions to put the piece.
+-- If the piece is not on the board, get the possible positions to put the
+-- piece.
 getValidMoves :: Board -> PlayerPiece -> Set Coordinate
-getValidMoves board playerPiece@(player, _) =
-  case getPosition board playerPiece of
-    Nothing -> getValidSpotsOnBorder
-    Just pos -> getValidFrom pos
+getValidMoves board playerPiece@(player, piece) =
+  case (getPosition board playerPiece, checkCanMove board playerPiece) of
+    (Nothing, _) -> Set.filter (not . isTouchingOpponent) borderSpots
+    (_, Left _) -> Set.empty
+    (Just pos, _) -> getValidFrom pos
   where
-    getValidSpotsOnBorder =
-      Set.filter (not . isTouchingOpponent)
-      . getBorder
-      . removePiece playerPiece
-      $ board
-    getValidFrom _ = undefined
+    borderSpots = getBorder . removePiece playerPiece $ board
+    getValidFrom (coord, _) =
+      let getReachableSpots' = getReachableSpots board coord
+          occupiedNeighbors =
+            Set.filter (isJust . getPiece' board) $ getNeighborhood coord
+          availableNeighbors = getReachableSpots' $ Just 1
+      in case pieceToType piece of
+        BeeType -> availableNeighbors
+        AntType -> getReachableSpots' Nothing
+        GrasshopperType -> Set.filter (isStraightLine coord) borderSpots
+        BeetleType -> Set.union occupiedNeighbors availableNeighbors
+        SpiderType -> getReachableSpots' $ Just 3
     -- Queries
     isTouchingOpponent coord =
       any ((/= player) . fst) $ getSurroundingPieces board coord

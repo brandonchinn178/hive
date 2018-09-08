@@ -7,6 +7,7 @@ module Hive.Coordinate
   , getNeighbors
   , toNeighborhood
   , getNeighborhood
+  , isStraightLine
   ) where
 
 import Data.Set (Set)
@@ -43,12 +44,12 @@ data Neighbors a = Neighbors
 -- | Get the coordinates surrounding the given coordinate.
 getNeighbors :: Coordinate -> Neighbors Coordinate
 getNeighbors (x, y) = Neighbors
-  { north = (x, y + 1)
+  { north     = (x    , y + 1)
   , northeast = (x + 1, y + 1)
-  , southeast = (x + 1, y)
-  , south = (x, y - 1)
+  , southeast = (x + 1, y    )
+  , south     = (x    , y - 1)
   , southwest = (x - 1, y - 1)
-  , northwest = (x - 1, y)
+  , northwest = (x - 1, y    )
   }
 
 -- | Convert neighbors to a set.
@@ -60,3 +61,10 @@ toNeighborhood Neighbors{..} = Set.fromList
 -- order.
 getNeighborhood :: Coordinate -> Set Coordinate
 getNeighborhood = toNeighborhood . getNeighbors
+
+-- | Return True if the given coordinates are in a straight line.
+isStraightLine :: Coordinate -> Coordinate -> Bool
+isStraightLine (x1, y1) (x2, y2) = dy == 0 || dx == 0 || abs dy == abs dx
+  where
+    dy = y2 - y1
+    dx = x2 - x1
