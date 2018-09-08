@@ -1,8 +1,7 @@
-name: hive-server
-version: 0.0.1
-author: Brandon Chinn
+_common/lib: !include "../hpack.yaml"
+<<: *defaults
 
-ghc-options: -Wall -Werror
+name: hive-server
 
 dependencies:
   - base
