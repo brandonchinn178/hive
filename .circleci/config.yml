@@ -8,12 +8,10 @@ aliases:
     working_directory: /root/src
 
   # system dependencies
-  - &install-stack
+  - &install-system-deps
     run:
-      name: Install stack
-      command: |
-        curl -sSL https://get.haskellstack.org/ | sh
-        stack --version
+      name: Build system dependencies
+      command: scripts/install-system-deps.sh
 
   # cache
   - &build-cache-key
@@ -32,10 +30,6 @@ aliases:
         cat "${FILES[@]}" > cache-key.txt
   - &cache-key
     v0-{{ checksum "cache-key.txt" }}
-  - &install-system-deps
-    run:
-      name: Build system dependencies
-      command: scripts/install-system-deps.sh
   - &install-stack-deps
     run:
       name: Build external dependencies
@@ -74,7 +68,6 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
-      - *install-stack
       - restore_cache:
           key: *cache-key
       - *install-system-deps
@@ -83,6 +76,8 @@ jobs:
           key: *cache-key
           paths:
             - ~/.stack
+            - ~/.ghcjs
+            - /usr/local/bin
       - *run-build
       - persist_to_workspace:
           root: .
@@ -95,7 +90,6 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
-      - *install-stack
       - restore_cache:
           key: *cache-key
       - *run-hlint
@@ -106,7 +100,6 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
-      - *install-stack
       - restore_cache:
           key: *cache-key
       - *run-stylish-haskell

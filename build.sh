@@ -29,12 +29,23 @@ BUILD_LIB=$(( BUILD_ALL || BUILD_LIB ))
 BUILD_SERVER=$(( BUILD_ALL || BUILD_SERVER ))
 BUILD_CLIENT=$(( BUILD_ALL || BUILD_CLIENT ))
 
+function build() {
+    if [[ "${#ARGS[@]}" -eq 0 ]]; then
+        stack build "$@"
+    else
+        stack build "$@" "${ARGS[@]}"
+    fi
+}
+
 if (( BUILD_CLIENT )); then
-    stack build --stack-yaml stack-ghcjs.yaml hive-client "${ARGS[@]}"
+    build --stack-yaml stack-ghcjs.yaml hive-client
 
     CLIENT_ROOT=$(stack path --stack-yaml stack-ghcjs.yaml --local-install-root)
-    mkdir -p server/static
-    cp "${CLIENT_ROOT}/bin/hive-client.jsexe"/*.js server/static/
+    CLIENT_SRC="${CLIENT_ROOT}/bin/hive-client.jsexe"
+    if [[ -d "$CLIENT_SRC" ]]; then
+        mkdir -p server/static
+        cp "${CLIENT_SRC}"/*.js server/static/
+    fi
 fi
 
 if (( BUILD_LIB || BUILD_SERVER )); then
@@ -45,5 +56,5 @@ if (( BUILD_LIB || BUILD_SERVER )); then
     if (( BUILD_SERVER )); then
         STACK_ARGS+=(hive-server)
     fi
-    stack build "${STACK_ARGS[@]}" "${ARGS[@]}"
+    build "${STACK_ARGS[@]}"
 fi
