@@ -42,7 +42,7 @@ import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
 import Hive.Coordinate
-  (Coordinate, Neighbors(..), getNeighborhood, getNeighbors, toNeighborhood)
+    (Coordinate, Neighbors(..), getNeighborhood, getNeighbors, toNeighborhood)
 import Hive.Piece (Piece, allPieces)
 import Hive.Player (Player(..))
 import Hive.Utils.Composition ((.:))
