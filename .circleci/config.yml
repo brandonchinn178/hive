@@ -7,29 +7,46 @@ aliases:
       - image: centos:7
     working_directory: /root/src
 
-  # system dependencies
-  - &install-system-deps
+  # caches
+  - &build-ghcjs-cache-key
     run:
-      name: Build system dependencies
-      command: scripts/install-system-deps.sh
-
-  # cache
+      name: Build ghcjs cache key
+      command: |
+        FILES=(
+          stack-ghcjs.yaml
+          client/package.yaml
+          scripts/install-system-deps.sh
+          scripts/install-stack-deps.sh
+        )
+        cat "${FILES[@]}" > ghcjs-cache-key.txt
+  - &ghcjs-cache-key
+    v0-{{ checksum "ghcjs-cache-key.txt" }}
+  - &ghcjs-cache-paths
+    - ~/.stack-ghcjs
+    - ~/.ghcjs
   - &build-cache-key
     run:
       name: Build cache key
       command: |
         FILES=(
           stack.yaml
-          stack-ghcjs.yaml
           lib/package.yaml
           server/package.yaml
-          client/package.yaml
           scripts/install-system-deps.sh
           scripts/install-stack-deps.sh
         )
         cat "${FILES[@]}" > cache-key.txt
   - &cache-key
     v0-{{ checksum "cache-key.txt" }}
+  - &cache-paths
+    - ~/.stack
+    - /usr/local/bin
+
+  # dependencies
+  - &install-system-deps
+    run:
+      name: Build system dependencies
+      command: scripts/install-system-deps.sh
   - &install-stack-deps
     run:
       name: Build external dependencies
@@ -39,7 +56,7 @@ aliases:
   - &run-build
     run:
       name: Build package
-      command: ./build.sh --test --no-run-tests
+      command: ./build-all.sh --test --no-run-tests
 
   # test steps
   - &run-hlint
@@ -56,10 +73,12 @@ jobs:
     <<: *docker-linux
     steps:
       - checkout
+      - *build-ghcjs-cache-key
       - *build-cache-key
       - persist_to_workspace:
           root: .
           paths:
+            - ghcjs-cache-key.txt
             - cache-key.txt
 
   build:
@@ -68,16 +87,20 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      # dependencies
+      - restore_cache:
+          key: *ghcjs-cache-key
       - restore_cache:
           key: *cache-key
       - *install-system-deps
       - *install-stack-deps
       - save_cache:
+          key: *ghcjs-cache-key
+          paths: *ghcjs-cache-paths
+      - save_cache:
           key: *cache-key
-          paths:
-            - ~/.stack
-            - ~/.ghcjs
-            - /usr/local/bin
+          paths: *cache-paths
+      # build
       - *run-build
       - persist_to_workspace:
           root: .
@@ -91,6 +114,8 @@ jobs:
       - attach_workspace:
           at: .
       - restore_cache:
+          key: *ghcjs-cache-key
+      - restore_cache:
           key: *cache-key
       - *run-hlint
 
@@ -100,6 +125,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - restore_cache:
+          key: *ghcjs-cache-key
       - restore_cache:
           key: *cache-key
       - *run-stylish-haskell

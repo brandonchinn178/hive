@@ -8,7 +8,7 @@ https://boardgamegeek.com/boardgame/2655/hive
 
 1. `scripts/install-system-deps.sh`
 1. `scripts/install-stack-deps.sh`
-1. `./build.sh`
+1. `./build-all.sh`
 
 ## Linting
 
