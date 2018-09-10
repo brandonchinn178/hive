@@ -1,4 +1,4 @@
-module Hive.Utils.Composition
+module Hive.Core.Utils.Composition
   ( (.:)
   ) where
 

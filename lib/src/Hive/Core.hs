@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Hive
+module Hive.Core
   ( module X
   , HiveState(..)
   , HiveResult(..)
@@ -18,12 +18,12 @@ import Data.Maybe (fromJust, isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
 
-import Hive.Board as X
-import Hive.Command as X
-import Hive.Coordinate as X
-import Hive.Piece as X
-import Hive.Player as X
-import qualified Hive.Utils.Set as Set
+import Hive.Core.Board as X
+import Hive.Core.Command as X
+import Hive.Core.Coordinate as X
+import Hive.Core.Piece as X
+import Hive.Core.Player as X
+import qualified Hive.Core.Utils.Set as Set
 
 -- | The state of a Hive game.
 data HiveState = HiveState

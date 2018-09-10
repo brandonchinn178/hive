@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Hive.Coordinate
+module Hive.Core.Coordinate
   ( Coordinate
   , Neighbors(..)
   , getNeighbors

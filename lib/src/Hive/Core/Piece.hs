@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Hive.Piece
+module Hive.Core.Piece
   ( Piece(..)
   , PieceType(..)
   , allPieces

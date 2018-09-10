@@ -1,4 +1,4 @@
-module Hive.Player
+module Hive.Core.Player
   ( Player(..)
   ) where
 
