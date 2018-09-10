@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Hive.Board
+module Hive.Core.Board
   ( PlayerPiece
   , Position
   -- * Board type
@@ -41,12 +41,12 @@ import Data.Maybe (isJust)
 import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 
-import Hive.Coordinate
+import Hive.Core.Coordinate
     (Coordinate, Neighbors(..), getNeighborhood, getNeighbors, toNeighborhood)
-import Hive.Piece (Piece, allPieces)
-import Hive.Player (Player(..))
-import Hive.Utils.Composition ((.:))
-import qualified Hive.Utils.Set as Set
+import Hive.Core.Piece (Piece, allPieces)
+import Hive.Core.Player (Player(..))
+import Hive.Core.Utils.Composition ((.:))
+import qualified Hive.Core.Utils.Set as Set
 
 {- Auxiliary types -}
 

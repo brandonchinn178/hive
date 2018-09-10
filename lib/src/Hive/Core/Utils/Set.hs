@@ -1,4 +1,4 @@
-module Hive.Utils.Set
+module Hive.Core.Utils.Set
   ( any
   , catMaybes
   , fromMaybe
