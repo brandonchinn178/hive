@@ -1,2 +1,4 @@
 # HLint configuration file
 # Format: https://github.com/ndmitchell/hlint/blob/master/data/default.yaml
+
+- ignore: {name: Use newtype instead of data}

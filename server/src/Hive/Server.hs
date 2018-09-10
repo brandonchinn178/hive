@@ -1,17 +1,23 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Hive.Server (app) where
+module Hive.Server (ServerSettings(..), app) where
 
 import qualified Data.ByteString.Lazy as ByteString
 import Data.FileEmbed (embedFile)
 import Data.Proxy (Proxy)
 import Network.Wai (Application)
+import Path (Abs, Dir, Path, fromAbsDir)
 import Servant
 import Servant.Utils.StaticFiles (serveDirectoryFileServer)
 
 import Hive.Server.ContentTypes (HTML, RawHtml(..))
+
+data ServerSettings = ServerSettings
+  { staticDir :: Path Abs Dir
+  }
 
 type IndexPage = Get '[HTML] RawHtml
 
@@ -22,13 +28,14 @@ getIndexPage = return . RawHtml . ByteString.fromStrict $ indexPage
 
 type StaticFiles = "static" :> Raw
 
-getStaticFiles :: Server Raw
-getStaticFiles = serveDirectoryFileServer "server/static"
+getStaticFiles :: ServerSettings -> Server Raw
+getStaticFiles ServerSettings{staticDir} =
+  serveDirectoryFileServer $ fromAbsDir staticDir
 
 type HiveApi = IndexPage :<|> StaticFiles
 
-hiveApi :: Server HiveApi
-hiveApi = getIndexPage :<|> getStaticFiles
+hiveApi :: ServerSettings -> Server HiveApi
+hiveApi settings = getIndexPage :<|> getStaticFiles settings
 
-app :: Application
-app = serve (Proxy :: Proxy HiveApi) hiveApi
+app :: ServerSettings -> Application
+app = serve (Proxy :: Proxy HiveApi) . hiveApi

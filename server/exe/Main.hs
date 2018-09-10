@@ -1,6 +1,16 @@
-import Network.Wai.Handler.Warp (run)
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
-import Hive.Server (app)
+import Network.Wai.Handler.Warp (run)
+import Path.IO (resolveDir')
+import System.Environment (lookupEnv)
+
+import Hive.Server
 
 main :: IO ()
-main = run 3000 app
+main = do
+  staticDir <- lookupEnv "STATIC_DIR" >>= \case
+    Just dir -> resolveDir' dir
+    Nothing -> fail "STATIC_DIR is not defined."
+  putStrLn "Running on port 3000."
+  run 3000 $ app ServerSettings{..}

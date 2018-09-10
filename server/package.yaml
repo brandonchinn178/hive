@@ -8,10 +8,10 @@ dependencies:
   - bytestring
   - file-embed
   - http-media
+  - path
   - servant
   - servant-server
   - wai
-  - warp
 
 library:
   source-dirs:  src
@@ -19,4 +19,7 @@ library:
 executable:
   source-dirs:  exe
   main:         Main.hs
-  dependencies: hive-server
+  dependencies:
+    - hive-server
+    - path-io
+    - warp
