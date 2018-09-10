@@ -5,6 +5,13 @@ name: hive-server
 
 dependencies:
   - base
+  - bytestring
+  - file-embed
+  - http-media
+  - servant
+  - servant-server
+  - wai
+  - warp
 
 library:
   source-dirs:  src
@@ -12,3 +19,4 @@ library:
 executable:
   source-dirs:  exe
   main:         Main.hs
+  dependencies: hive-server
