@@ -5,6 +5,8 @@ name: hive-client
 
 dependencies:
   - base
+  - containers
+  - hive
   - react-flux
 
 library:
