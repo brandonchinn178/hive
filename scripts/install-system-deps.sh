@@ -42,6 +42,8 @@ setup_linux() {
         tar
         xz
         zlib
+        # stack deps
+        zlib-devel
         # ghcjs
         ncurses-devel
     )
