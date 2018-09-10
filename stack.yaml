@@ -1,4 +1,5 @@
 resolver: lts-11.11
 
 packages:
-- .
+- lib
+- server

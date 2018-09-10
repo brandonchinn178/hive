@@ -1,0 +1,4 @@
+- &defaults
+  version: 0.0.1
+  author: Brandon Chinn
+  ghc-options: -Wall -Werror

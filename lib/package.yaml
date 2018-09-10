@@ -1,0 +1,11 @@
+_common/lib: !include "../hpack.yaml"
+<<: *defaults
+
+name: hive
+
+dependencies:
+  - base
+  - containers
+
+library:
+  source-dirs: src
