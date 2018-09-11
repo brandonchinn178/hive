@@ -1,3 +1,9 @@
+# MacOS artifacts
+.DS_Store
+
+# Stack artifacts
 *.cabal
 .stack-work
+
+# Build artifacts
 server/static/*.js

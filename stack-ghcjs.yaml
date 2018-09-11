@@ -11,3 +11,7 @@ setup-info:
 
 packages:
 - client
+- lib
+
+extra-deps:
+- react-flux-1.2.3

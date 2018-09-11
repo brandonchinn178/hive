@@ -35,7 +35,7 @@ module Hive.Core.Board
 import Control.Monad ((<=<))
 import Data.Function (on)
 import Data.List (sortBy)
-import Data.Map.Strict (Map, (!), (!?))
+import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 import Data.Maybe (isJust)
 import Data.Set (Set, (\\))
@@ -155,7 +155,7 @@ getOccupied = Set.fromList . Map.elems . Map.mapMaybe id . pieceMap
 
 -- | Get the top-most piece and its height at the given coordinate.
 getPiece :: Board -> Coordinate -> Maybe (PlayerPiece, Int)
-getPiece board = getTop <=< (coordinateMap board !?)
+getPiece board = getTop <=< (`Map.lookup` coordinateMap board)
   where
     getTop [] = Nothing
     getTop l@(x:_) = Just (x, length l - 1)

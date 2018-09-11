@@ -1,2 +1,6 @@
+import React.Flux (reactRender)
+
+import Hive.Client (app)
+
 main :: IO ()
-main = putStrLn "Hello world"
+main = reactRender "app" app ()

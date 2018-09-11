@@ -5,6 +5,9 @@ name: hive-client
 
 dependencies:
   - base
+  - containers
+  - hive
+  - react-flux
 
 library:
   source-dirs:  src
@@ -12,3 +15,5 @@ library:
 executable:
   source-dirs:  exe
   main:         Main.hs
+  dependencies:
+    - hive-client
