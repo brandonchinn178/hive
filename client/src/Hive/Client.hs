@@ -33,5 +33,5 @@ appState = mkStore $ AppState
   }
 
 app :: ReactView ()
-app = defineControllerView "Main Hive app" appState $ \state () -> do
+app = defineControllerView "Main Hive app" appState $ \state () ->
   p_ $ elemShow state
