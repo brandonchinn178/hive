@@ -77,13 +77,14 @@ install_stack() {
         rm -rf "${STACK}"
     fi
 
-    ./stack.sh setup
+    stack setup
 
     if ! type alex &> /dev/null; then
-        ./stack.sh install alex --local-bin-path /usr/local/bin
+        stack install alex --local-bin-path /usr/local/bin
     fi
 
-    ./stack-ghcjs.sh setup
+    : ${GHCJS_STACK_ROOT:=~/.stack}
+    stack --stack-yaml stack-ghcjs.yaml --stack-root "$GHCJS_STACK_ROOT" setup
 }
 
 case $(uname) in
