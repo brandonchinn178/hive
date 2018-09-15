@@ -9,7 +9,7 @@ https://boardgamegeek.com/boardgame/2655/hive
 1. `scripts/install-system-deps.sh`
 1. `scripts/install-stack-deps.sh`
 1. `stack build`
-1. `stack exec hive-server`
+1. `stack exec hive`
 1. Go to `http://localhost:3000`
 
 ## Linting

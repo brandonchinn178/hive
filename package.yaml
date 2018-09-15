@@ -2,7 +2,10 @@ name: hive
 version: 0.0.1
 author: Brandon Chinn
 
-ghc-options: -Wall -Werror
+ghc-options:
+  - -Wall
+  - -Werror
+  - -optP-Wno-nonportable-include-path
 
 dependencies:
   - base
@@ -13,11 +16,9 @@ dependencies:
 library:
   source-dirs:  src
 
-executables:
-  # https://github.com/commercialhaskell/stack/issues/3918
-  hive-server:
-    source-dirs:  exe
-    main:         Main.hs
-    dependencies:
-      - hive
-      - jsaddle-warp
+executable:
+  source-dirs:  exe
+  main:         Main.hs
+  dependencies:
+    - hive
+    - jsaddle-warp
