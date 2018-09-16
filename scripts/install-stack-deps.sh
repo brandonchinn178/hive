@@ -2,8 +2,8 @@
 #
 # Install third-party stack dependencies.
 
-set -eo pipefail
+set -e
 
 stack build --test --only-dependencies
-stack --stack-yaml stack-ghcjs.yaml build --test --only-dependencies
+ghcjs/stack.sh build --test --only-dependencies
 stack build hlint stylish-haskell

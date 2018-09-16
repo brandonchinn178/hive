@@ -41,6 +41,7 @@ aliases:
   - &cache-paths
     - ~/.stack
     - /usr/local/bin
+    - /usr/local/lib/node
 
   # dependencies
   - &install-system-deps
@@ -49,7 +50,7 @@ aliases:
       command: scripts/install-system-deps.sh
   - &install-stack-deps
     run:
-      name: Build external dependencies
+      name: Build stack dependencies
       command: scripts/install-stack-deps.sh
 
   # build steps
@@ -105,7 +106,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-              - .stack-work
+              - ghcjs/.stack-work
 
   hlint:
     <<: *docker-linux
