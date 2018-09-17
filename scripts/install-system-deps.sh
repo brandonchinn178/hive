@@ -18,7 +18,7 @@ setup_darwin() {
     fi
 
     install_node darwin
-    install_stack darwin
+    install_stack osx
 }
 
 setup_linux() {
