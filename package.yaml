@@ -1,0 +1,24 @@
+name: hive
+version: 0.0.1
+author: Brandon Chinn
+
+ghc-options:
+  - -Wall
+  - -Werror
+  - -optP-Wno-nonportable-include-path
+
+dependencies:
+  - base
+  - containers
+  - jsaddle
+  - reflex-dom-core
+
+library:
+  source-dirs:  src
+
+executable:
+  source-dirs:  exe
+  main:         Main.hs
+  dependencies:
+    - hive
+    - jsaddle-warp

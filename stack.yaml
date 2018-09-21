@@ -1,4 +1,17 @@
-resolver: lts-11.11
+resolver: lts-10.9
 
 packages:
-- server
+  - .
+
+extra-deps:
+  - git: https://github.com/reflex-frp/reflex.git
+    commit: c339a17fd03337e3c180c0d8d6cd91028d55de55
+  - git: https://github.com/reflex-frp/reflex-dom.git
+    commit: 56aa06e94e5c9c6c2eb19cd988ed8de0d76cae38
+    subdirs:
+      - reflex-dom-core
+  - jsaddle-warp-0.9.5.0
+  - jsaddle-wkwebview-0.9.4.0
+  - prim-uniq-0.1.0.1
+  - websockets-0.10.0.0
+  - zenc-0.1.1

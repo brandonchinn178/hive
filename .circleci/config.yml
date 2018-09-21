@@ -6,41 +6,48 @@ aliases:
     docker:
       - image: centos:7
     working_directory: /root/src
+  - &docker-ghc
+    <<: *docker-linux
+    environment:
+      NO_GHCJS: true
+  - &docker-ghcjs
+    <<: *docker-linux
+    environment:
+      NO_GHC: true
 
   # caches
-  - &build-ghcjs-cache-key
+  - &build-ghc-cache-key
     run:
-      name: Build ghcjs cache key
+      name: Build cache key for ghc
       command: |
         FILES=(
-          stack-ghcjs.yaml
-          client/package.yaml
+          stack.yaml
+          package.yaml
+          scripts/install-system-deps.sh
+          scripts/install-stack-deps.sh
+        )
+        cat "${FILES[@]}" > ghc-cache-key.txt
+  - &build-ghcjs-cache-key
+    run:
+      name: Build cache key for ghcjs
+      command: |
+        FILES=(
+          stack.yaml
+          ghcjs/stack.yaml
+          package.yaml
           scripts/install-system-deps.sh
           scripts/install-stack-deps.sh
         )
         cat "${FILES[@]}" > ghcjs-cache-key.txt
+  - &ghc-cache-key
+    v0-{{ checksum "ghc-cache-key.txt" }}
   - &ghcjs-cache-key
     v0-{{ checksum "ghcjs-cache-key.txt" }}
-  - &ghcjs-cache-paths
-    - ~/.stack-ghcjs
-    - ~/.ghcjs
-  - &build-cache-key
-    run:
-      name: Build cache key
-      command: |
-        FILES=(
-          stack.yaml
-          lib/package.yaml
-          server/package.yaml
-          scripts/install-system-deps.sh
-          scripts/install-stack-deps.sh
-        )
-        cat "${FILES[@]}" > cache-key.txt
-  - &cache-key
-    v0-{{ checksum "cache-key.txt" }}
   - &cache-paths
     - ~/.stack
+    - ~/.ghcjs
     - /usr/local/bin
+    - /usr/local/lib/node
 
   # dependencies
   - &install-system-deps
@@ -49,14 +56,21 @@ aliases:
       command: scripts/install-system-deps.sh
   - &install-stack-deps
     run:
-      name: Build external dependencies
+      name: Build stack dependencies
       command: scripts/install-stack-deps.sh
+      no_output_timeout: 30m
 
   # build steps
-  - &run-build
+  - &run-build-ghc
     run:
       name: Build package
-      command: ./build-all.sh --test --no-run-tests
+      command: stack build --test --no-run-tests
+      no_output_timeout: 30m
+  - &run-build-ghcjs
+    run:
+      name: Build package
+      command: ghcjs/stack.sh build --test --no-run-tests
+      no_output_timeout: 30m
 
   # test steps
   - &run-hlint
@@ -69,66 +83,88 @@ aliases:
       command: scripts/stylish-haskell.sh
 
 jobs:
-  prebuild:
-    <<: *docker-linux
+  prebuild-ghc:
+    <<: *docker-ghc
+    steps:
+      - checkout
+      - *build-ghc-cache-key
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ghc-cache-key.txt
+
+  prebuild-ghcjs:
+    <<: *docker-ghcjs
     steps:
       - checkout
       - *build-ghcjs-cache-key
-      - *build-cache-key
       - persist_to_workspace:
           root: .
           paths:
             - ghcjs-cache-key.txt
-            - cache-key.txt
 
-  build:
-    <<: *docker-linux
+  build-ghc:
+    <<: *docker-ghc
     steps:
       - checkout
       - attach_workspace:
           at: .
       # dependencies
       - restore_cache:
-          key: *ghcjs-cache-key
-      - restore_cache:
-          key: *cache-key
+          key: *ghc-cache-key
       - *install-system-deps
       - *install-stack-deps
       - save_cache:
-          key: *ghcjs-cache-key
-          paths: *ghcjs-cache-paths
-      - save_cache:
-          key: *cache-key
+          key: *ghc-cache-key
           paths: *cache-paths
       # build
-      - *run-build
+      - *run-build-ghc
       - persist_to_workspace:
           root: .
           paths:
               - .stack-work
 
+  build-ghcjs:
+    <<: *docker-ghcjs
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      # dependencies
+      - restore_cache:
+          key: *ghc-cache-key
+      - restore_cache:
+          key: *ghcjs-cache-key
+      - *install-system-deps
+      - *install-stack-deps
+      - save_cache:
+          key: *ghcjs-cache-key
+          paths: *cache-paths
+      # build
+      - *run-build-ghcjs
+      - persist_to_workspace:
+          root: .
+          paths:
+              - ghcjs/.stack-work
+
   hlint:
-    <<: *docker-linux
+    <<: *docker-ghc
     steps:
       - checkout
       - attach_workspace:
           at: .
       - restore_cache:
-          key: *ghcjs-cache-key
-      - restore_cache:
-          key: *cache-key
+          key: *ghc-cache-key
       - *run-hlint
 
   stylish-haskell:
-    <<: *docker-linux
+    <<: *docker-ghc
     steps:
       - checkout
       - attach_workspace:
           at: .
       - restore_cache:
-          key: *ghcjs-cache-key
-      - restore_cache:
-          key: *cache-key
+          key: *ghc-cache-key
       - *run-stylish-haskell
 
 workflows:
@@ -136,13 +172,18 @@ workflows:
 
   build_and_test:
     jobs:
-      - prebuild
-      - build:
+      - prebuild-ghc
+      - prebuild-ghcjs
+      - build-ghc:
           requires:
-            - prebuild
+            - prebuild-ghc
+      - build-ghcjs:
+          requires:
+            - prebuild-ghcjs
+            - build-ghc
       - hlint:
           requires:
-            - build
+            - build-ghc
       - stylish-haskell:
           requires:
-            - build
+            - build-ghc

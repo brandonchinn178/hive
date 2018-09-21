@@ -6,4 +6,4 @@
 .stack-work
 
 # Build artifacts
-server/static/*.js
+build/

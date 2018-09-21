@@ -31,12 +31,12 @@ function check_file_empty() {
 }
 
 if [[ "$STYLISH_APPLY" == 1 ]]; then
-    get_files | xargs ./stack.sh exec -- stylish-haskell --inplace
+    get_files | xargs stack exec -- stylish-haskell --inplace
 else
     trap 'rm -rf .tmp' 0
     get_files | while read FILE; do
         mkdir -p ".tmp/$(dirname "$FILE")"
-        ./stack.sh exec -- stylish-haskell "$FILE" | diff_no_fail --unified "$FILE" - > .tmp/"$FILE"
+        stack exec -- stylish-haskell "$FILE" | diff_no_fail --unified "$FILE" - > .tmp/"$FILE"
     done
     find .tmp -type f | xargs cat | tee .tmp/diffs.txt
     check_file_empty .tmp/diffs.txt

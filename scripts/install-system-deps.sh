@@ -2,7 +2,7 @@
 #
 # Install system dependencies.
 
-set -eu -o pipefail
+set -eux -o pipefail
 
 CABAL_BASE_URL=https://www.haskell.org/cabal/release/cabal-install-1.24.0.2
 
@@ -17,15 +17,8 @@ setup_darwin() {
         mv cabal /usr/local/bin/
     fi
 
-    if ! is_command node; then
-        if ! is_command brew; then
-            echo "Install brew" >&2
-            return 1
-        fi
-        brew install node
-    fi
-
-    install_stack darwin
+    install_node darwin
+    install_stack osx
 }
 
 setup_linux() {
@@ -57,14 +50,26 @@ setup_linux() {
         mv cabal /usr/local/bin/
     fi
 
+    install_node linux
+    install_stack linux
+}
+
+install_node() {
+    local PLATFORM=$1
+    # https://github.com/ghcjs/ghcjs/issues/668#issuecomment-414793423
+    local NODE_VERSION=7.10.1
+    local NODE="node-v${NODE_VERSION}-${PLATFORM}-x64"
+    local DEST=/usr/local/lib/node
+
     if ! is_command node; then
-        local NODE=node-v8.11.4-linux-x64
-        curl "https://nodejs.org/dist/v8.11.4/${NODE}.tar.xz" | tar xJ
-        mv "${NODE}/bin/node" /usr/local/bin/
-        rm -rf "${NODE}"
+        mkdir -p "$DEST"
+        curl "https://nodejs.org/dist/v${NODE_VERSION}/${NODE}.tar.xz" | tar xJ -C "$DEST" --strip-components 1
+        ln -sf "${DEST}/bin/node" /usr/local/bin/
+        ln -sf "${DEST}/bin/npm" /usr/local/bin/
     fi
 
-    install_stack linux
+    node --version
+    npm --version
 }
 
 install_stack() {
@@ -77,13 +82,13 @@ install_stack() {
         rm -rf "${STACK}"
     fi
 
-    ./stack.sh setup
+    stack --version
+    stack setup
 
-    if ! type alex &> /dev/null; then
-        ./stack.sh install alex --local-bin-path /usr/local/bin
-    fi
+    # Tools needed for GHCJS
+    stack build alex happy
 
-    ./stack-ghcjs.sh setup
+    ghcjs/stack.sh setup
 }
 
 case $(uname) in
