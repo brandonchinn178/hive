@@ -10,8 +10,12 @@ ghc-options:
 dependencies:
   - base
   - containers
+  - directory
   - jsaddle
+  - linear
   - reflex-dom-core
+  - svg-tree
+  - template-haskell
 
 library:
   source-dirs:  src
