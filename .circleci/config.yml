@@ -69,7 +69,9 @@ aliases:
   - &run-build-ghcjs
     run:
       name: Build package
-      command: ghcjs/build.sh --test --no-run-tests
+      command: |
+        ghcjs/build.sh --test --no-run-tests
+        tar czf build.tar.gz build/
       no_output_timeout: 30m
 
   # test steps
@@ -147,6 +149,8 @@ jobs:
           paths:
               - ghcjs/.stack-work
               - build/
+      - store_artifacts:
+          path: build.tar.gz
 
   hlint:
     <<: *docker-ghc
