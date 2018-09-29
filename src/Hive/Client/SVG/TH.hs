@@ -1,6 +1,4 @@
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Hive.Client.SVG.TH (loadSVG) where
 

@@ -1,5 +1,6 @@
 -- | Module adapted from https://github.com/reflex-frp/reflex-dom-contrib/blob/master/src/Reflex/Dom/Contrib/Widgets/Svg.hs
 
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -24,24 +25,23 @@ svgDynAttr' = elDynAttrNS' (Just "http://www.w3.org/2000/svg")
 
 {-# INLINABLE svgDynAttr #-}
 svgDynAttr :: (PostBuild t m, DomBuilder t m) => Text -> Dynamic t (Map Text Text) -> m a -> m a
-svgDynAttr elementTag attrs child = snd <$> svgDynAttr' elementTag attrs child
+svgDynAttr elementTag attrs = fmap snd . svgDynAttr' elementTag attrs
 
 {-# INLINABLE svgAttr' #-}
 svgAttr' :: (PostBuild t m, DomBuilder t m) => Text -> Map Text Text -> m a -> m (Element EventResult (DomBuilderSpace m) t, a)
-svgAttr' elementTag attrs child = svgDynAttr' elementTag (constDyn attrs) child
+svgAttr' elementTag = svgDynAttr' elementTag . constDyn
 
 {-# INLINABLE svgAttr #-}
 svgAttr :: (PostBuild t m, DomBuilder t m) => Text -> Map Text Text -> m a -> m a
-svgAttr elementTag attrs child = svgDynAttr elementTag (constDyn attrs) child
+svgAttr elementTag = svgDynAttr elementTag . constDyn
 
 {-# INLINABLE svg' #-}
 svg' :: (PostBuild t m, DomBuilder t m) => Text -> m a -> m (Element EventResult (DomBuilderSpace m) t, a)
-svg' elementTag child = svgAttr' elementTag Map.empty child
-
+svg' elementTag = svgAttr' elementTag Map.empty
 
 {-# INLINABLE svg #-}
 svg :: (PostBuild t m, DomBuilder t m) => Text -> m a -> m a
-svg elementTag child = svgAttr elementTag Map.empty child
+svg elementTag = svgAttr elementTag Map.empty
 
 svgClass :: (PostBuild t m, DomBuilder t m) => Text -> Text -> m a -> m a
-svgClass elementTag c child = svgAttr elementTag ("class" =: c) child
+svgClass elementTag c = svgAttr elementTag ("class" =: c)
