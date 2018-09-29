@@ -2,10 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Hive.Client.SVG.TH
-  ( loadSVG
-  , ParsedSVG(..)
-  ) where
+module Hive.Client.SVG.TH (loadSVG) where
 
 import Data.Char (toLower, toUpper)
 import Data.Maybe (fromMaybe)
@@ -23,17 +20,10 @@ import Language.Haskell.TH.Syntax (Lift(..), addDependentFile)
 import Linear.V2 (V2(..))
 import System.Directory (getCurrentDirectory)
 
--- | A parsed SVG file.
---
--- Fortunately, all of our SVG files are just a list of paths with just `d`
--- definitions, so we don't have to make a general parser.
-data ParsedSVG = ParsedSVG
-  { width  :: Double
-  , height :: Double
-  , paths  :: [String]
-  } deriving (Eq,Show,Lift)
-
 -- | Load an SVG from a file with Template Haskell.
+--
+-- The Template Haskell evaluates to [String], representing the paths in the
+-- SVG.
 loadSVG :: FilePath -> ExpQ
 loadSVG fp = do
   -- path to directory with `Setup.hs`
@@ -47,11 +37,9 @@ loadSVG fp = do
       fromMaybe (error $ "Could not parse: " ++ path) <$> loadSvgFile path
 
 -- | Parse an SVG loaded in by svg-tree into an SVG_El from reflex-dom-svg.
-parseSVG :: Document -> ParsedSVG
-parseSVG Document{..} = ParsedSVG{..}
+parseSVG :: Document -> [String]
+parseSVG = map fromElement . _elements
   where
-    (_, _, width, height) = fromMaybe (error "viewbox is not defined") _viewBox
-    paths = map fromElement _elements
     fromElement = \case
       PathTree (Path _ commands) -> unwords . map parsePathCommand $ commands
       _ -> error "Found a non <path> element"
