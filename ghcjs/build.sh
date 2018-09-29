@@ -6,7 +6,7 @@ set -eu -o pipefail
 
 builtin cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-ghcjs/stack.sh build
+ghcjs/stack.sh build "$@"
 
 rm -rf build
 mkdir -p build

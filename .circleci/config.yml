@@ -69,7 +69,7 @@ aliases:
   - &run-build-ghcjs
     run:
       name: Build package
-      command: ghcjs/stack.sh build --test --no-run-tests
+      command: ghcjs/build.sh --test --no-run-tests
       no_output_timeout: 30m
 
   # test steps
@@ -146,6 +146,7 @@ jobs:
           root: .
           paths:
               - ghcjs/.stack-work
+              - build/
 
   hlint:
     <<: *docker-ghc
