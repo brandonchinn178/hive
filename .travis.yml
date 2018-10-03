@@ -1,0 +1,31 @@
+sudo: false
+
+language: generic
+
+cache:
+  directories:
+    - $HOME/.stack
+    - $HOME/bin
+
+branches:
+  only:
+    - master
+
+addons:
+  apt:
+    packages:
+      - libgmp-dev
+
+before_install:
+  - travis_retry scripts/install-system-deps.sh
+
+install:
+  - scripts/install-stack-deps.sh
+
+script:
+  # Run linting
+  - scripts/hlint.sh
+  - scripts/stylish-haskell.sh
+
+  # Run build
+  - stack --no-terminal build

@@ -11,10 +11,12 @@ is_command() {
 }
 
 setup_darwin() {
+    mkdir -p "$DEST"
+
     if ! is_command cabal; then
         local CABAL_FILE=cabal-install-1.24.0.2-x86_64-apple-darwin-yosemite.tar.gz
         curl "${CABAL_BASE_URL}/${CABAL_FILE}" | tar xz
-        mv cabal /usr/local/bin/
+        mv cabal "$DEST"
     fi
 
     install_node darwin
@@ -22,32 +24,13 @@ setup_darwin() {
 }
 
 setup_linux() {
-    YUM_PACKAGES=(
-        # stack
-        automake
-        gcc
-        git
-        gmp-devel
-        gnupg
-        libffi
-        make
-        perl
-        tar
-        xz
-        zlib
-        # stack deps
-        zlib-devel
-        # ghcjs
-        ncurses-devel
-    )
-    yum install -y "${YUM_PACKAGES[@]}"
-
+    mkdir -p "$DEST"
     mkdir -p ~/.bin
 
     if ! is_command cabal; then
         local CABAL_FILE=cabal-install-1.24.0.2-x86_64-unknown-linux.tar.gz
         curl "${CABAL_BASE_URL}/${CABAL_FILE}" | tar xz --strip-components 7
-        mv cabal /usr/local/bin/
+        mv cabal "$DEST"
     fi
 
     install_node linux
@@ -59,13 +42,13 @@ install_node() {
     # https://github.com/ghcjs/ghcjs/issues/668#issuecomment-414793423
     local NODE_VERSION=7.10.1
     local NODE="node-v${NODE_VERSION}-${PLATFORM}-x64"
-    local DEST=/usr/local/lib/node
+    local NODE_DEST=/usr/local/lib/node
 
     if ! is_command node; then
-        mkdir -p "$DEST"
-        curl "https://nodejs.org/dist/v${NODE_VERSION}/${NODE}.tar.xz" | tar xJ -C "$DEST" --strip-components 1
-        ln -sf "${DEST}/bin/node" /usr/local/bin/
-        ln -sf "${DEST}/bin/npm" /usr/local/bin/
+        mkdir -p "$NODE_DEST"
+        curl "https://nodejs.org/dist/v${NODE_VERSION}/${NODE}.tar.xz" | tar xJ -C "$NODE_DEST" --strip-components 1
+        ln -sf "${NODE_DEST}/bin/node" "$DEST"
+        ln -sf "${NODE_DEST}/bin/npm" "$DEST"
     fi
 
     node --version
@@ -78,7 +61,7 @@ install_stack() {
     if ! is_command stack; then
         local STACK="stack-1.7.1-${PLATFORM}-x86_64"
         curl -L "https://github.com/commercialhaskell/stack/releases/download/v1.7.1/${STACK}.tar.gz" | tar xz
-        mv "${STACK}/stack" /usr/local/bin/
+        mv "${STACK}/stack" "$DEST"
         rm -rf "${STACK}"
     fi
 
@@ -92,6 +75,12 @@ install_stack() {
 }
 
 case $(uname) in
-    (Darwin) setup_darwin ;;
-    (Linux) setup_linux ;;
+    (Darwin)
+        DEST=/usr/local/bin
+        setup_darwin
+    ;;
+    (Linux)
+        DEST=~/bin
+        setup_linux
+    ;;
 esac
