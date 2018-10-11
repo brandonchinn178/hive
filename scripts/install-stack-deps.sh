@@ -9,6 +9,5 @@ if [[ "${NO_GHC:-}" != "true" ]]; then
 fi
 
 # needs to be installed explicitly first for linux
-ghcjs/stack.sh build ghcjs-dom-jsffi
-ghcjs/stack.sh build --test --only-dependencies
+ghcjs/stack.sh build -j1 --test --only-dependencies
 stack build hlint stylish-haskell

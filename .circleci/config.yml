@@ -64,7 +64,7 @@ aliases:
   - &run-build-ghc
     run:
       name: Build package
-      command: stack build --test --no-run-tests
+      command: stack build -j1 --test --no-run-tests
       no_output_timeout: 30m
   - &run-build-ghcjs
     run:
