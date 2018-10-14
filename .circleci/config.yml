@@ -6,14 +6,6 @@ aliases:
     docker:
       - image: centos:7
     working_directory: /root/src
-  - &docker-ghc
-    <<: *docker-linux
-    environment:
-      NO_GHCJS: true
-  - &docker-ghcjs
-    <<: *docker-linux
-    environment:
-      NO_GHC: true
 
   # caches
   - &build-ghc-cache-key
@@ -43,11 +35,6 @@ aliases:
     v0-{{ checksum "ghc-cache-key.txt" }}
   - &ghcjs-cache-key
     v0-{{ checksum "ghcjs-cache-key.txt" }}
-  - &cache-paths
-    - ~/.stack
-    - ~/.ghcjs
-    - /usr/local/bin
-    - /usr/local/lib/node
 
   # dependencies
   - &install-system-deps
@@ -66,13 +53,29 @@ aliases:
       name: Build package
       command: stack build --test --no-run-tests
       no_output_timeout: 30m
-  - &run-build-ghcjs
+
+  # ghcjs steps
+  - &init-remote-server
     run:
-      name: Build package
-      command: |
-        ghcjs/build.sh --test --no-run-tests
-        tar czf build.tar.gz build/
+      name: Spin up remote build server
+      command: echo init-remote-server
+  - &upload-ghcjs-cache
+    run:
+      name: Upload GHCJS cache
+      command: echo upload-ghcjs-cache
+  - &remote-build-ghcjs
+    run:
+      name: Build with ghcjs remotely
+      command: echo remote-build-ghcjs
       no_output_timeout: 30m
+  - &download-ghcjs-artifacts
+    run:
+      name: Download GHCJS cache
+      command: echo download-ghcjs-artifacts
+  - &destroy-remote-server
+    run:
+      name: Terminate remote build server
+      command: echo destroy-remote-server
 
   # test steps
   - &run-hlint
@@ -86,7 +89,7 @@ aliases:
 
 jobs:
   prebuild-ghc:
-    <<: *docker-ghc
+    <<: *docker-linux
     steps:
       - checkout
       - *build-ghc-cache-key
@@ -96,7 +99,7 @@ jobs:
             - ghc-cache-key.txt
 
   prebuild-ghcjs:
-    <<: *docker-ghcjs
+    <<: *docker-linux
     steps:
       - checkout
       - *build-ghcjs-cache-key
@@ -106,7 +109,7 @@ jobs:
             - ghcjs-cache-key.txt
 
   build-ghc:
-    <<: *docker-ghc
+    <<: *docker-linux
     steps:
       - checkout
       - attach_workspace:
@@ -118,7 +121,11 @@ jobs:
       - *install-stack-deps
       - save_cache:
           key: *ghc-cache-key
-          paths: *cache-paths
+          paths:
+            - ~/.stack
+            - ~/.ghcjs
+            - /usr/local/bin
+            - /usr/local/lib/node
       # build
       - *run-build-ghc
       - persist_to_workspace:
@@ -127,33 +134,27 @@ jobs:
               - .stack-work
 
   build-ghcjs:
-    <<: *docker-ghcjs
+    <<: *docker-linux
     steps:
       - checkout
       - attach_workspace:
           at: .
-      # dependencies
-      - restore_cache:
-          key: *ghc-cache-key
       - restore_cache:
           key: *ghcjs-cache-key
-      - *install-system-deps
-      - *install-stack-deps
+      - *init-remote-server
+      - *upload-ghcjs-cache
+      - *remote-build-ghcjs
+      - *download-ghcjs-artifacts
+      - *destroy-remote-server
       - save_cache:
           key: *ghcjs-cache-key
-          paths: *cache-paths
-      # build
-      - *run-build-ghcjs
-      - persist_to_workspace:
-          root: .
           paths:
-              - ghcjs/.stack-work
-              - build/
+            - ~/ghcjs-cache.tar.gz
       - store_artifacts:
           path: build.tar.gz
 
   lint:
-    <<: *docker-ghc
+    <<: *docker-linux
     steps:
       - checkout
       - attach_workspace:
@@ -176,7 +177,6 @@ workflows:
       - build-ghcjs:
           requires:
             - prebuild-ghcjs
-            - build-ghc
       - lint:
           requires:
             - build-ghc
