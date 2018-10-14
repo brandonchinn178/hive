@@ -152,7 +152,7 @@ jobs:
       - store_artifacts:
           path: build.tar.gz
 
-  hlint:
+  lint:
     <<: *docker-ghc
     steps:
       - checkout
@@ -161,15 +161,6 @@ jobs:
       - restore_cache:
           key: *ghc-cache-key
       - *run-hlint
-
-  stylish-haskell:
-    <<: *docker-ghc
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          key: *ghc-cache-key
       - *run-stylish-haskell
 
 workflows:
@@ -186,9 +177,6 @@ workflows:
           requires:
             - prebuild-ghcjs
             - build-ghc
-      - hlint:
-          requires:
-            - build-ghc
-      - stylish-haskell:
+      - lint:
           requires:
             - build-ghc
