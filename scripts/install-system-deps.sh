@@ -84,11 +84,6 @@ install_stack() {
 
     stack --version
     stack setup
-
-    # Tools needed for GHCJS
-    stack build alex happy
-
-    ghcjs/stack.sh setup
 }
 
 case $(uname) in

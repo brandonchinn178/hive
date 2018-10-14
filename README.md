@@ -18,6 +18,14 @@ The project is set up to work for both `ghc` and `ghcjs`. It's faster to
 develop with `ghc`, so just use `stack build` to build and
 `stack exec hive` to start running the server.
 
+### GHCJS
+
+To set up your system to build with ghcjs, run the following steps:
+
+1. `stack build alex happy` (These executables are needed by GHCJS)
+1. `ghcjs/stack.sh setup` (This step will take a long time the first time)
+1. `ghcjs/stack.sh build --only-dependencies`
+
 To run stack with `ghcjs`, use the `ghcjs/stack.sh` script. To imitate a
 deployment build, run `ghcjs/build.sh`, which will compile the static files
 to `build/`.
