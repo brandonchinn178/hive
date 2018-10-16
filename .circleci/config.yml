@@ -88,24 +88,16 @@ aliases:
       command: scripts/stylish-haskell.sh
 
 jobs:
-  prebuild-ghc:
+  prebuild:
     <<: *docker-linux
     steps:
       - checkout
       - *build-ghc-cache-key
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ghc-cache-key.txt
-
-  prebuild-ghcjs:
-    <<: *docker-linux
-    steps:
-      - checkout
       - *build-ghcjs-cache-key
       - persist_to_workspace:
           root: .
           paths:
+            - ghc-cache-key.txt
             - ghcjs-cache-key.txt
 
   build-ghc:
@@ -169,14 +161,13 @@ workflows:
 
   build_and_test:
     jobs:
-      - prebuild-ghc
-      - prebuild-ghcjs
+      - prebuild
       - build-ghc:
           requires:
-            - prebuild-ghc
+            - prebuild
       - build-ghcjs:
           requires:
-            - prebuild-ghcjs
+            - prebuild
       - lint:
           requires:
             - build-ghc
