@@ -46,6 +46,10 @@ aliases:
       name: Build stack dependencies
       command: scripts/install-stack-deps.sh
       no_output_timeout: 30m
+  - &install-terraform
+    run:
+      name: Install Terraform
+      command: scripts/install-terraform.sh
 
   # build steps
   - &run-build-ghc
@@ -133,6 +137,7 @@ jobs:
           at: .
       - restore_cache:
           key: *ghcjs-cache-key
+      - *install-terraform
       - *init-remote-server
       - *upload-ghcjs-cache
       - *remote-build-ghcjs

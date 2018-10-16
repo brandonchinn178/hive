@@ -5,6 +5,7 @@
 set -eux -o pipefail
 
 CABAL_BASE_URL=https://www.haskell.org/cabal/release/cabal-install-1.24.0.2
+HERE=$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 
 is_command() {
     type "$1" &> /dev/null
