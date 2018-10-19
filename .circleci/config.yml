@@ -62,7 +62,17 @@ aliases:
   - &init-remote-server
     run:
       name: Spin up remote build server
-      command: echo init-remote-server
+      command: |
+        terraform init
+        terraform apply --auto-approve
+
+        # get pem key
+        curl -O https://bootstrap.pypa.io/get-pip.py
+        python get-pip.py
+        pip install awscli
+        aws s3 cp s3://hive-ci/hive-ci.pem .
+        chmod 600 hive-ci.pem
+      working_directory: /root/src/.circleci/
   - &upload-ghcjs-cache
     run:
       name: Upload GHCJS cache
@@ -79,7 +89,9 @@ aliases:
   - &destroy-remote-server
     run:
       name: Terminate remote build server
-      command: echo destroy-remote-server
+      command: terraform destroy --auto-approve
+      working_directory: /root/src/.circleci/
+      when: always
 
   # test steps
   - &run-hlint

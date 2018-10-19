@@ -11,3 +11,6 @@ build/
 # Terraform artifacts
 .terraform/
 terraform.tfstate*
+
+# Private keys
+*.pem
