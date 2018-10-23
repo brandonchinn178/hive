@@ -6,6 +6,8 @@ aliases:
     docker:
       - image: centos:7
     working_directory: /root/src
+    environment:
+      CI_FILES: /root/.ci/
 
   # caches
   - &build-ghc-cache-key
@@ -34,7 +36,7 @@ aliases:
   - &ghc-cache-key
     v0-{{ checksum "ghc-cache-key.txt" }}
   - &ghcjs-cache-key
-    v0-{{ checksum "ghcjs-cache-key.txt" }}
+    v0.1-{{ checksum "ghcjs-cache-key.txt" }}
 
   # dependencies
   - &install-system-deps
@@ -46,10 +48,20 @@ aliases:
       name: Build stack dependencies
       command: scripts/install-stack-deps.sh
       no_output_timeout: 30m
-  - &install-terraform
+  - &install-remote-deps
     run:
-      name: Install Terraform
-      command: scripts/install-terraform.sh
+      name: Install dependencies for building remotely
+      command: |
+        scripts/install-terraform.sh
+
+        # install aws cli
+        curl -O https://bootstrap.pypa.io/get-pip.py
+        python get-pip.py
+        pip install awscli
+        aws configure set region us-west-2
+
+        # install ssh commands
+        yum install -y openssh-clients
 
   # build steps
   - &run-build-ghc
@@ -63,24 +75,36 @@ aliases:
     run:
       name: Spin up remote build server
       command: |
+        mkdir -p "$CI_FILES"
+
         terraform init
         terraform apply --auto-approve
+        REMOTE_IP=$(terraform output ip)
+        echo "export REMOTE_IP=${REMOTE_IP}" >> "$BASH_ENV"
 
         # get pem key
-        curl -O https://bootstrap.pypa.io/get-pip.py
-        python get-pip.py
-        pip install awscli
-        aws s3 cp s3://hive-ci/hive-ci.pem .
-        chmod 600 hive-ci.pem
+        aws s3 cp s3://hive-ci/hive-ci.pem "$CI_FILES"
+        chmod 600 "${CI_FILES}/hive-ci.pem"
+
+        # wait for instance to boot up
+        aws ec2 wait instance-running --filters "Name=ip-address,Values=${REMOTE_IP}"
+
+        # register host
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        ssh-keyscan -H "$REMOTE_IP" >> ~/.ssh/known_hosts
       working_directory: /root/src/.circleci/
   - &upload-ghcjs-cache
     run:
       name: Upload GHCJS cache
-      command: echo upload-ghcjs-cache
+      command: |
+        scp -i "${CI_FILES}/hive-ci.pem" \
+          ~/ghcjs-cache.tar.gz \
+          .circleci/run-remote-build.sh \
+          "ec2-user@${REMOTE_IP}:~/"
   - &remote-build-ghcjs
     run:
       name: Build with ghcjs remotely
-      command: echo remote-build-ghcjs
+      command: ssh -i "${CI_FILES}/hive-ci.pem" "ec2-user@${REMOTE_IP}" ./run-remote-build.sh
       no_output_timeout: 30m
   - &download-ghcjs-artifacts
     run:
@@ -149,7 +173,7 @@ jobs:
           at: .
       - restore_cache:
           key: *ghcjs-cache-key
-      - *install-terraform
+      - *install-remote-deps
       - *init-remote-server
       - *upload-ghcjs-cache
       - *remote-build-ghcjs
