@@ -16,7 +16,7 @@ resource "aws_instance" "ci_build" {
 }
 
 resource "aws_security_group" "allow_all" {
-  name = "allow_all"
+  name_prefix = "allow-all-"
   ingress {
     from_port = 0
     to_port = 0
