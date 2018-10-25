@@ -61,6 +61,9 @@ aliases:
         # install ssh commands
         yum install -y openssh-clients
 
+        # install git command
+        yum install -y git
+
   # build steps
   - &run-build-ghc
     run:
@@ -92,11 +95,16 @@ aliases:
         # wait for instance to boot up
         aws ec2 wait instance-running --filters "Name=ip-address,Values=${REMOTE_IP}"
       working_directory: /root/src/.circleci/
-  - &upload-ghcjs-cache
+  - &upload-remote-files
     run:
-      name: Upload GHCJS cache
+      name: Upload files for building remotely
       command: |
-        FILES=( .circleci/run-remote-build.sh )
+        git archive HEAD | gzip > repo.tar.gz
+
+        FILES=(
+            .circleci/run-remote-build.sh
+            repo.tar.gz
+        )
         if [[ -f ~/ghcjs-cache.tar.gz ]]; then
           FILES+=( ~/ghcjs-cache.tar.gz )
         fi
@@ -109,7 +117,10 @@ aliases:
   - &download-ghcjs-artifacts
     run:
       name: Download GHCJS cache
-      command: echo download-ghcjs-artifacts
+      command: |
+        scp "ec2-user@${REMOTE_IP}:~/everything.tar.gz" .
+        tar xf everything.tar.gz
+      working_directory: /root/
   - &destroy-remote-server
     run:
       name: Terminate remote build server
@@ -175,7 +186,7 @@ jobs:
           key: *ghcjs-cache-key
       - *install-remote-deps
       - *init-remote-server
-      - *upload-ghcjs-cache
+      - *upload-remote-files
       - *remote-build-ghcjs
       - *download-ghcjs-artifacts
       - *destroy-remote-server
