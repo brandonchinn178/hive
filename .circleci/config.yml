@@ -103,25 +103,31 @@ aliases:
         git archive HEAD | gzip > repo.tar.gz
 
         FILES=(
+            .circleci/run-remote-build-deps.sh
             .circleci/run-remote-build.sh
             repo.tar.gz
         )
-        if [[ -f ~/ghcjs-cache.tar.gz ]]; then
-          FILES+=( ~/ghcjs-cache.tar.gz )
+        if [[ -f ghcjs-cache.tar.gz ]]; then
+          FILES+=( ghcjs-cache.tar.gz )
         fi
         scp "${FILES[@]}" "ec2-user@${REMOTE_IP}:~/"
+  - &remote-build-deps
+    run:
+      name: Build ghcjs dependencies
+      command: ssh "ec2-user@${REMOTE_IP}" sudo ./run-remote-build-deps.sh
+      no_output_timeout: 30m
+  - &download-ghcjs-cache
+    run:
+      name: Download GHCJS cache
+      command: scp "ec2-user@${REMOTE_IP}:~/ghcjs-cache.tar.gz" .
   - &remote-build-ghcjs
     run:
       name: Build with ghcjs remotely
       command: ssh "ec2-user@${REMOTE_IP}" sudo ./run-remote-build.sh
-      no_output_timeout: 30m
   - &download-ghcjs-artifacts
     run:
-      name: Download GHCJS cache
-      command: |
-        scp "ec2-user@${REMOTE_IP}:~/everything.tar.gz" .
-        tar xf everything.tar.gz
-      working_directory: /root/
+      name: Download GHCJS build artifacts
+      command: scp "ec2-user@${REMOTE_IP}:~/build.tar.gz" .
   - &destroy-remote-server
     run:
       name: Terminate remote build server
@@ -188,15 +194,17 @@ jobs:
       - *install-remote-deps
       - *init-remote-server
       - *upload-remote-files
-      - *remote-build-ghcjs
-      - *download-ghcjs-artifacts
-      - *destroy-remote-server
+      - *remote-build-deps
+      - *download-ghcjs-cache
       - save_cache:
           key: *ghcjs-cache-key
           paths:
-            - ~/ghcjs-cache.tar.gz
+            - ghcjs-cache.tar.gz
+      - *remote-build-ghcjs
+      - *download-ghcjs-artifacts
       - store_artifacts:
           path: build.tar.gz
+      - *destroy-remote-server
 
   lint:
     <<: *docker-linux
