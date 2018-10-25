@@ -36,7 +36,7 @@ aliases:
   - &ghc-cache-key
     v0-{{ checksum "ghc-cache-key.txt" }}
   - &ghcjs-cache-key
-    v0.1-{{ checksum "ghcjs-cache-key.txt" }}
+    v0.2-{{ checksum "ghcjs-cache-key.txt" }}
 
   # dependencies
   - &install-system-deps
@@ -101,10 +101,12 @@ aliases:
     run:
       name: Upload GHCJS cache
       command: |
-        scp -i "${CI_FILES}/hive-ci.pem" \
-          ~/ghcjs-cache.tar.gz \
-          .circleci/run-remote-build.sh \
-          "ec2-user@${REMOTE_IP}:~/"
+        if [[ -f ~/ghcjs-cache.tar.gz ]]; then
+          scp -i "${CI_FILES}/hive-ci.pem" \
+            ~/ghcjs-cache.tar.gz \
+            .circleci/run-remote-build.sh \
+            "ec2-user@${REMOTE_IP}:~/"
+        fi
   - &remote-build-ghcjs
     run:
       name: Build with ghcjs remotely
