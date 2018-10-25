@@ -38,3 +38,7 @@ resource "aws_security_group" "allow_all" {
 output "ip" {
   value = "${aws_instance.ci_build.public_ip}"
 }
+
+output "id" {
+  value = "${aws_instance.ci_build.id}"
+}

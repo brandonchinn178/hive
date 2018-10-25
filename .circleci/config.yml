@@ -94,7 +94,7 @@ aliases:
         chmod 400 ~/.ssh/config
 
         # wait for instance to boot up
-        aws ec2 wait instance-running --filters "Name=ip-address,Values=${REMOTE_IP}"
+        aws ec2 wait instance-status-ok --instance-ids "$(terraform output id)"
       working_directory: /root/src/.circleci/
   - &upload-remote-files
     run:
