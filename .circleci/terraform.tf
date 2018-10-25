@@ -4,7 +4,7 @@ provider "aws" {
 
 resource "aws_instance" "ci_build" {
   ami = "ami-28e07e50" # RHEL 7.5
-  instance_type = "t3.medium"
+  instance_type = "t3.large"
   key_name = "hive-ci"
   security_groups = [
     "${aws_security_group.allow_all.name}",
