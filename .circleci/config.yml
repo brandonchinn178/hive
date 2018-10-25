@@ -89,9 +89,13 @@ aliases:
         # wait for instance to boot up
         aws ec2 wait instance-running --filters "Name=ip-address,Values=${REMOTE_IP}"
 
-        # register host
+        # ignore key checking
         mkdir -p ~/.ssh && chmod 700 ~/.ssh
-        ssh-keyscan -H "$REMOTE_IP" >> ~/.ssh/known_hosts
+        cat >> ~/.ssh/config <<EOF
+        Host *
+            StrictHostKeyChecking no
+        EOF
+        chmod 400 ~/.ssh/config
       working_directory: /root/src/.circleci/
   - &upload-ghcjs-cache
     run:
