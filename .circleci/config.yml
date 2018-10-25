@@ -6,6 +6,7 @@ aliases:
     docker:
       - image: centos:7
     working_directory: /root/src
+    shell: bash -ex -o pipefail
 
   # caches
   - &build-ghc-cache-key
