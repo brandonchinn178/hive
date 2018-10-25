@@ -10,4 +10,4 @@ build/
 
 # Terraform artifacts
 .terraform/
-terraform.tfstate*
+*terraform.tfstate*

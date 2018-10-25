@@ -10,6 +10,10 @@ resource "aws_instance" "ci_build" {
     "${aws_security_group.allow_all.name}",
   ]
 
+  root_block_device {
+    volume_size = 25
+  }
+
   tags {
     Name = "Hive CI Build"
   }
