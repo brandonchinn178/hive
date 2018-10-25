@@ -22,6 +22,7 @@ ghcjs/stack.sh setup
 ghcjs/stack.sh build --only-dependencies
 
 # pack cache
+mv ~/.stack ~/.ghcjs .
 mv /usr/local/bin/ usr-bin
 mv /usr/local/lib/ usr-lib
 tar czf ghcjs-cache.tar.gz \
