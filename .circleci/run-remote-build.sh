@@ -12,7 +12,10 @@ if [[ -f ghcjs-cache.tar.gz ]]; then
     rm ghcjs-cache.tar.gz
 fi
 
-sudo bash -c 'PATH=$PATH:/usr/local/bin scripts/install-system-deps.sh'
+export PATH=/usr/local/bin:$PATH
+chown -R $USER:$USER .
+
+scripts/install-system-deps.sh
 scripts/install-stack-deps.sh
 stack build alex happy
 ghcjs/stack.sh setup

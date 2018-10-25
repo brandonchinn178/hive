@@ -113,7 +113,7 @@ aliases:
   - &remote-build-ghcjs
     run:
       name: Build with ghcjs remotely
-      command: ssh "ec2-user@${REMOTE_IP}" ./run-remote-build.sh
+      command: ssh "ec2-user@${REMOTE_IP}" sudo ./run-remote-build.sh
       no_output_timeout: 30m
   - &download-ghcjs-artifacts
     run:
