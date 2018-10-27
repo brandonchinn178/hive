@@ -41,7 +41,12 @@ setup_linux() {
         # ghcjs
         ncurses-devel
     )
-    yum install -y "${YUM_PACKAGES[@]}"
+    if type sudo &> /dev/null; then
+        CMD="sudo"
+    else
+        CMD="command"
+    fi
+    "$CMD" yum install -y "${YUM_PACKAGES[@]}"
 
     mkdir -p ~/.bin
 
