@@ -7,8 +7,8 @@ tar xf repo.tar.gz
 
 if [[ -f ghcjs-cache.tar.gz ]]; then
     tar xf ghcjs-cache.tar.gz
-    mv usr-bin /usr/local/bin/
-    mv usr-lib /usr/local/lib/
+    sudo mv usr-bin/* /usr/local/bin/
+    sudo mv usr-lib/* /usr/local/lib/
     rm ghcjs-cache.tar.gz
 fi
 
