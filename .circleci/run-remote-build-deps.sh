@@ -16,14 +16,13 @@ export PATH=/usr/local/bin:$PATH
 
 sudo chown -R $USER:$USER /usr/local/
 scripts/install-system-deps.sh
-scripts/install-stack-deps.sh
 stack build alex happy
 ghcjs/stack.sh setup
 ghcjs/stack.sh build --only-dependencies
 
 # pack cache
-mv /usr/local/bin/ usr-bin
-mv /usr/local/lib/ usr-lib
+cp -r /usr/local/bin/ usr-bin
+cp -r /usr/local/lib/ usr-lib
 tar czf ghcjs-cache.tar.gz \
     .stack \
     .ghcjs \
