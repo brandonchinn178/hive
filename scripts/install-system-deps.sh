@@ -5,6 +5,7 @@
 set -eux -o pipefail
 
 CABAL_BASE_URL=https://www.haskell.org/cabal/release/cabal-install-1.24.0.2
+HERE=$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 
 is_command() {
     type "$1" &> /dev/null
@@ -40,7 +41,12 @@ setup_linux() {
         # ghcjs
         ncurses-devel
     )
-    yum install -y "${YUM_PACKAGES[@]}"
+    if type sudo &> /dev/null; then
+        CMD="sudo"
+    else
+        CMD="command"
+    fi
+    "$CMD" yum install -y "${YUM_PACKAGES[@]}"
 
     mkdir -p ~/.bin
 
@@ -84,11 +90,6 @@ install_stack() {
 
     stack --version
     stack setup
-
-    # Tools needed for GHCJS
-    stack build alex happy
-
-    ghcjs/stack.sh setup
 }
 
 case $(uname) in

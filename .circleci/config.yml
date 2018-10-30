@@ -6,14 +6,7 @@ aliases:
     docker:
       - image: centos:7
     working_directory: /root/src
-  - &docker-ghc
-    <<: *docker-linux
-    environment:
-      NO_GHCJS: true
-  - &docker-ghcjs
-    <<: *docker-linux
-    environment:
-      NO_GHC: true
+    shell: bash -ex -o pipefail
 
   # caches
   - &build-ghc-cache-key
@@ -40,14 +33,9 @@ aliases:
         )
         cat "${FILES[@]}" > ghcjs-cache-key.txt
   - &ghc-cache-key
-    v0-{{ checksum "ghc-cache-key.txt" }}
+    v1-{{ checksum "ghc-cache-key.txt" }}
   - &ghcjs-cache-key
-    v0-{{ checksum "ghcjs-cache-key.txt" }}
-  - &cache-paths
-    - ~/.stack
-    - ~/.ghcjs
-    - /usr/local/bin
-    - /usr/local/lib/node
+    v1-{{ checksum "ghcjs-cache-key.txt" }}
 
   # dependencies
   - &install-system-deps
@@ -59,6 +47,23 @@ aliases:
       name: Build stack dependencies
       command: scripts/install-stack-deps.sh
       no_output_timeout: 30m
+  - &install-remote-deps
+    run:
+      name: Install dependencies for building remotely
+      command: |
+        scripts/install-terraform.sh
+
+        # install aws cli
+        curl -O https://bootstrap.pypa.io/get-pip.py
+        python get-pip.py
+        pip install awscli
+        aws configure set region us-west-2
+
+        # install ssh commands
+        yum install -y openssh-clients
+
+        # install git command
+        yum install -y git
 
   # build steps
   - &run-build-ghc
@@ -66,13 +71,69 @@ aliases:
       name: Build package
       command: stack build --test --no-run-tests
       no_output_timeout: 30m
-  - &run-build-ghcjs
+
+  # ghcjs steps
+  - &init-remote-server
     run:
-      name: Build package
+      name: Spin up remote build server
       command: |
-        ghcjs/build.sh --test --no-run-tests
-        tar czf build.tar.gz build/
+        terraform init
+        terraform apply --auto-approve
+        REMOTE_IP=$(terraform output ip)
+        echo "export REMOTE_IP=${REMOTE_IP}" >> "$BASH_ENV"
+
+        # setup ssh
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        aws s3 cp s3://hive-ci/hive-ci.pem ~/.ssh/
+        chmod 600 ~/.ssh/hive-ci.pem
+        cat >> ~/.ssh/config <<EOF
+        Host ${REMOTE_IP}
+            StrictHostKeyChecking no
+            IdentityFile ~/.ssh/hive-ci.pem
+        EOF
+        chmod 400 ~/.ssh/config
+
+        # wait for instance to boot up
+        aws ec2 wait instance-status-ok --instance-ids "$(terraform output id)"
+      working_directory: /root/src/.circleci/
+  - &upload-remote-files
+    run:
+      name: Upload files for building remotely
+      command: |
+        git archive HEAD | gzip > repo.tar.gz
+
+        FILES=(
+            .circleci/run-remote-build-deps.sh
+            .circleci/run-remote-build.sh
+            repo.tar.gz
+        )
+        if [[ -f ghcjs-cache.tar.gz ]]; then
+          FILES+=( ghcjs-cache.tar.gz )
+        fi
+        scp "${FILES[@]}" "ec2-user@${REMOTE_IP}:~/"
+  - &remote-build-deps
+    run:
+      name: Build ghcjs dependencies
+      command: ssh "ec2-user@${REMOTE_IP}" ./run-remote-build-deps.sh
       no_output_timeout: 30m
+  - &download-ghcjs-cache
+    run:
+      name: Download GHCJS cache
+      command: scp "ec2-user@${REMOTE_IP}:~/ghcjs-cache.tar.gz" .
+  - &remote-build-ghcjs
+    run:
+      name: Build with ghcjs remotely
+      command: ssh "ec2-user@${REMOTE_IP}" ./run-remote-build.sh
+  - &download-ghcjs-artifacts
+    run:
+      name: Download GHCJS build artifacts
+      command: scp "ec2-user@${REMOTE_IP}:~/build.tar.gz" .
+  - &destroy-remote-server
+    run:
+      name: Terminate remote build server
+      command: terraform destroy --auto-approve
+      working_directory: /root/src/.circleci/
+      when: always
 
   # test steps
   - &run-hlint
@@ -85,28 +146,20 @@ aliases:
       command: scripts/stylish-haskell.sh
 
 jobs:
-  prebuild-ghc:
-    <<: *docker-ghc
+  prebuild:
+    <<: *docker-linux
     steps:
       - checkout
       - *build-ghc-cache-key
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ghc-cache-key.txt
-
-  prebuild-ghcjs:
-    <<: *docker-ghcjs
-    steps:
-      - checkout
       - *build-ghcjs-cache-key
       - persist_to_workspace:
           root: .
           paths:
+            - ghc-cache-key.txt
             - ghcjs-cache-key.txt
 
   build-ghc:
-    <<: *docker-ghc
+    <<: *docker-linux
     steps:
       - checkout
       - attach_workspace:
@@ -118,7 +171,11 @@ jobs:
       - *install-stack-deps
       - save_cache:
           key: *ghc-cache-key
-          paths: *cache-paths
+          paths:
+            - ~/.stack
+            - ~/.ghcjs
+            - /usr/local/bin
+            - /usr/local/lib/node
       # build
       - *run-build-ghc
       - persist_to_workspace:
@@ -127,33 +184,30 @@ jobs:
               - .stack-work
 
   build-ghcjs:
-    <<: *docker-ghcjs
+    <<: *docker-linux
     steps:
       - checkout
       - attach_workspace:
           at: .
-      # dependencies
-      - restore_cache:
-          key: *ghc-cache-key
       - restore_cache:
           key: *ghcjs-cache-key
-      - *install-system-deps
-      - *install-stack-deps
+      - *install-remote-deps
+      - *init-remote-server
+      - *upload-remote-files
+      - *remote-build-deps
+      - *download-ghcjs-cache
       - save_cache:
           key: *ghcjs-cache-key
-          paths: *cache-paths
-      # build
-      - *run-build-ghcjs
-      - persist_to_workspace:
-          root: .
           paths:
-              - ghcjs/.stack-work
-              - build/
+            - ghcjs-cache.tar.gz
+      - *remote-build-ghcjs
+      - *download-ghcjs-artifacts
       - store_artifacts:
           path: build.tar.gz
+      - *destroy-remote-server
 
-  hlint:
-    <<: *docker-ghc
+  lint:
+    <<: *docker-linux
     steps:
       - checkout
       - attach_workspace:
@@ -161,15 +215,6 @@ jobs:
       - restore_cache:
           key: *ghc-cache-key
       - *run-hlint
-
-  stylish-haskell:
-    <<: *docker-ghc
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          key: *ghc-cache-key
       - *run-stylish-haskell
 
 workflows:
@@ -177,18 +222,13 @@ workflows:
 
   build_and_test:
     jobs:
-      - prebuild-ghc
-      - prebuild-ghcjs
+      - prebuild
       - build-ghc:
           requires:
-            - prebuild-ghc
+            - prebuild
       - build-ghcjs:
           requires:
-            - prebuild-ghcjs
-            - build-ghc
-      - hlint:
-          requires:
-            - build-ghc
-      - stylish-haskell:
+            - prebuild
+      - lint:
           requires:
             - build-ghc
