@@ -33,9 +33,9 @@ aliases:
         )
         cat "${FILES[@]}" > ghcjs-cache-key.txt
   - &ghc-cache-key
-    v0-{{ checksum "ghc-cache-key.txt" }}
+    v1-{{ checksum "ghc-cache-key.txt" }}
   - &ghcjs-cache-key
-    v0.2-{{ checksum "ghcjs-cache-key.txt" }}
+    v1-{{ checksum "ghcjs-cache-key.txt" }}
 
   # dependencies
   - &install-system-deps

@@ -12,8 +12,6 @@ if [[ -f ghcjs-cache.tar.gz ]]; then
     rm ghcjs-cache.tar.gz
 fi
 
-export PATH=/usr/local/bin:$PATH
-
 sudo chown -R $USER:$USER /usr/local/
 scripts/install-system-deps.sh
 stack build alex happy
