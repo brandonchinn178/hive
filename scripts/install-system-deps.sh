@@ -18,6 +18,15 @@ setup_darwin() {
         mv cabal /usr/local/bin/
     fi
 
+    if is_command brew; then
+        if ! brew ls sassc &> /dev/null; then
+            brew install sassc
+        fi
+    else
+        echo "Please install Homebrew." >&2
+        exit 1
+    fi
+
     install_node darwin
     install_stack osx
 }
@@ -33,6 +42,7 @@ setup_linux() {
         libffi
         make
         perl
+        sassc
         tar
         xz
         zlib
@@ -46,6 +56,7 @@ setup_linux() {
     else
         CMD="command"
     fi
+    "$CMD" yum install -y epel-release
     "$CMD" yum install -y "${YUM_PACKAGES[@]}"
 
     mkdir -p ~/.bin
