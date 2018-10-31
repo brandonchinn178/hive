@@ -18,17 +18,9 @@ setup_darwin() {
         mv cabal /usr/local/bin/
     fi
 
-    if is_command brew; then
-        if ! brew ls sassc &> /dev/null; then
-            brew install sassc
-        fi
-    else
-        echo "Please install Homebrew." >&2
-        exit 1
-    fi
-
     install_node darwin
     install_stack osx
+    install_sass macos
 }
 
 setup_linux() {
@@ -42,7 +34,6 @@ setup_linux() {
         libffi
         make
         perl
-        sassc
         tar
         xz
         zlib
@@ -56,7 +47,6 @@ setup_linux() {
     else
         CMD="command"
     fi
-    "$CMD" yum install -y epel-release
     "$CMD" yum install -y "${YUM_PACKAGES[@]}"
 
     mkdir -p ~/.bin
@@ -69,6 +59,7 @@ setup_linux() {
 
     install_node linux
     install_stack linux
+    install_sass linux
 }
 
 install_node() {
@@ -101,6 +92,18 @@ install_stack() {
 
     stack --version
     stack setup
+}
+
+install_sass() {
+    local PLATFORM=$1
+    local SASS="dart-sass-1.14.3-${PLATFORM}-x64"
+    local DEST=/usr/local/lib/sass
+
+    if ! is_command sass; then
+        mkdir -p "$DEST"
+        curl -L "https://github.com/sass/dart-sass/releases/download/1.14.3/${SASS}.tar.gz" | tar xz -C "$DEST" --strip-components 1
+        ln -sf "${DEST}/sass" /usr/local/bin/
+    fi
 }
 
 case $(uname) in

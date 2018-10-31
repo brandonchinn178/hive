@@ -29,6 +29,6 @@ app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $ do
 
 style :: ByteString
 style = $(do
-  result <- runIO $ readProcess "sassc" ["static/style.scss"] ""
-  lift $ pack $ result
+  result <- runIO $ readProcess "sass" ["static/style.scss"] ""
+  lift $ pack result
   )
