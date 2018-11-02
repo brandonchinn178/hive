@@ -9,14 +9,17 @@ ghc-options:
 
 dependencies:
   - base
+  - bytestring
   - containers
   - directory
   - jsaddle
   - linear
+  - process
   - reflex-dom-core
   - svg-tree
   - template-haskell
   - text
+  - th-lift-instances
 
 library:
   source-dirs:  src

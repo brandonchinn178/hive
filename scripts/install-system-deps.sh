@@ -20,6 +20,7 @@ setup_darwin() {
 
     install_node darwin
     install_stack osx
+    install_sass macos
 }
 
 setup_linux() {
@@ -58,6 +59,7 @@ setup_linux() {
 
     install_node linux
     install_stack linux
+    install_sass linux
 }
 
 install_node() {
@@ -90,6 +92,18 @@ install_stack() {
 
     stack --version
     stack setup
+}
+
+install_sass() {
+    local PLATFORM=$1
+    local SASS="dart-sass-1.14.3-${PLATFORM}-x64"
+    local DEST=/usr/local/lib/sass
+
+    if ! is_command sass; then
+        mkdir -p "$DEST"
+        curl -L "https://github.com/sass/dart-sass/releases/download/1.14.3/${SASS}.tar.gz" | tar xz -C "$DEST" --strip-components 1
+        ln -sf "${DEST}/sass" /usr/local/bin/
+    fi
 }
 
 case $(uname) in
