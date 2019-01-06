@@ -3,9 +3,8 @@
 
 module Hive.Client (app) where
 
-import Data.ByteString (ByteString)
-import Data.ByteString.Char8 (pack)
-import Instances.TH.Lift ()
+import qualified Data.Text as Text
+import Hasmin (minifyCSS)
 import Language.Haskell.TH.Syntax (addDependentFile, lift, runIO)
 import Language.Javascript.JSaddle (JSM)
 import Reflex.Dom.Core
@@ -19,7 +18,17 @@ import Hive.Core.Piece (Piece(..))
 import Hive.Core.Player (Player(..))
 
 app :: JSM ()
-app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $
+app = mainWidgetWithHead header body
+
+header :: (PostBuild t m, DomBuilder t m) => m ()
+header = do
+  el "title" $ text "Hive"
+  case minifyCSS $ Text.pack style of
+    Right css -> el "style" $ text css
+    _ -> fail "Bad style.scss file"
+
+body :: (PostBuild t m, DomBuilder t m) => m ()
+body = svgAttr "svg" ("viewBox" =: "0 0 1000 1000") $
   renderBoard
     $ putPiece (One, Bee) (0, -1)
     . putPiece (Two, Grass0) (1, 2)
@@ -27,16 +36,12 @@ app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $
     . putPiece (Two, Spider0) (0, 1)
     . putPiece (One, Ant0) (0, 0)
     $ emptyBoard
-  where
-    svgAttrs =
-      [ "viewBox" =: "0 0 1000 1000"
-      ]
 
-style :: ByteString
+style :: String
 style = $(do
   cwd <- runIO getCurrentDirectory
   let sassFile = cwd </> "static/style.scss"
   result <- runIO $ readProcess "sass" [sassFile] ""
   addDependentFile sassFile
-  lift $ pack result
+  lift result
   )
