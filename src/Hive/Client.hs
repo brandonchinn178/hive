@@ -14,14 +14,19 @@ import System.FilePath ((</>))
 import System.Process (readProcess)
 
 import Hive.Client.SVG
+import Hive.Core.Board (emptyBoard, putPiece)
+import Hive.Core.Piece (Piece(..))
+import Hive.Core.Player (Player(..))
 
 app :: JSM ()
-app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $ do
-    svgAnt
-    svgBee
-    svgBeetle
-    svgGrasshopper
-    svgSpider
+app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $
+  renderBoard
+    $ putPiece (One, Bee) (0, -1)
+    $ putPiece (Two, Grass0) (1, 2)
+    $ putPiece (One, Beetle0) (1, 0)
+    $ putPiece (Two, Spider0) (0, 1)
+    $ putPiece (One, Ant0) (0, 0)
+    $ emptyBoard
   where
     svgAttrs =
       [ "viewBox" =: "0 0 500 500"
