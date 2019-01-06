@@ -29,9 +29,7 @@ app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $
     $ emptyBoard
   where
     svgAttrs =
-      [ "viewBox" =: "0 0 500 500"
-      , "width" =: "500"
-      , "height" =: "500"
+      [ "viewBox" =: "0 0 1000 1000"
       ]
 
 style :: ByteString
