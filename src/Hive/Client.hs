@@ -22,10 +22,10 @@ app :: JSM ()
 app = mainWidgetWithCss style $ svgAttr "svg" (mconcat svgAttrs) $
   renderBoard
     $ putPiece (One, Bee) (0, -1)
-    $ putPiece (Two, Grass0) (1, 2)
-    $ putPiece (One, Beetle0) (1, 0)
-    $ putPiece (Two, Spider0) (0, 1)
-    $ putPiece (One, Ant0) (0, 0)
+    . putPiece (Two, Grass0) (1, 2)
+    . putPiece (One, Beetle0) (1, 0)
+    . putPiece (Two, Spider0) (0, 1)
+    . putPiece (One, Ant0) (0, 0)
     $ emptyBoard
   where
     svgAttrs =
