@@ -19,11 +19,11 @@ import Hive.Client.SVG.Contrib (svgAttr)
 import Hive.Client.SVG.TH (loadSVG)
 
 toSVGPath :: (PostBuild t m, DomBuilder t m) => Text -> [String] -> m ()
-toSVGPath cls = svgAttr "g" groupAttrs . traverse_ (fromPath . Text.pack)
+toSVGPath cls = svgAttr "g" attrs . traverse_ (fromPath . Text.pack)
   where
-    groupAttrs = mconcat
-      [ "transform" =: "scale(0.2)" -- 500x500 -> 100x100
-      , "class" =: cls
+    attrs = mconcat
+      [ "class" =: cls
+      , "transform" =: "translate(35)" -- manually bump pieces to center
       ]
     fromPath d = svgAttr "path" ("d" =: d) $ pure ()
 

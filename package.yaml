@@ -12,6 +12,7 @@ dependencies:
   - bytestring
   - containers
   - directory
+  - filepath
   - jsaddle
   - linear
   - process

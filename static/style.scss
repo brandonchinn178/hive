@@ -1,19 +1,56 @@
+/* Variables */
+
+$blue: #2A8FBD;
+$orange: #FA0;
+$purple: #AF98DF;
+$green: #11cc3A;
+$brown: #543511;
+$off-white: #FFA;
+$dark-gray: #666;
+$black: #444;
+
+/* Style */
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+svg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
 g.ant {
-    fill: blue;
+    fill: $blue;
 }
 
 g.bee {
-    fill: yellow;
+    fill: $orange;
 }
 
 g.beetle {
-    fill: purple;
+    fill: $purple;
 }
 
 g.grasshopper {
-    fill: green;
+    fill: $green;
 }
 
 g.spider {
-    fill: brown;
+    fill: $brown;
+}
+
+.hex {
+    stroke: $black;
+    stroke-width: 10px;
+    g.player1 & {
+        fill: $off-white;
+    }
+    g.player2 & {
+        fill: $dark-gray;
+    }
 }
