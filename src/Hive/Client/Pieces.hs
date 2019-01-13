@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Hive.Client.SVG.Pieces
+module Hive.Client.Pieces
   ( svgAnt
   , svgBee
   , svgBeetle
@@ -15,7 +15,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Reflex.Dom.Core
 
-import Hive.Client.SVG.Contrib (svgAttr)
+import Hive.Client.SVG (svgAttr)
 import Hive.Client.SVG.TH (loadSVG)
 
 toSVGPath :: (PostBuild t m, DomBuilder t m) => Text -> [String] -> m ()

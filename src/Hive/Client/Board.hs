@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Hive.Client.SVG.Board
+module Hive.Client.Board
   ( renderBoard
   ) where
 
@@ -11,8 +11,8 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Reflex.Dom.Core
 
-import Hive.Client.SVG.Contrib (svgAttr)
-import Hive.Client.SVG.Pieces
+import Hive.Client.Pieces
+import Hive.Client.SVG (svgAttr)
 import Hive.Core.Board (Board, PlayerPiece, coordinateMap)
 import Hive.Core.Coordinate (Coordinate)
 import Hive.Core.Piece (PieceType(..), pieceToType)

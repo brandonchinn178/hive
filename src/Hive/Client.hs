@@ -12,7 +12,8 @@ import System.Directory (getCurrentDirectory)
 import System.FilePath ((</>))
 import System.Process (readProcess)
 
-import Hive.Client.SVG
+import Hive.Client.Board (renderBoard)
+import Hive.Client.SVG (svgAttr)
 import Hive.Core.Board (emptyBoard, putPiece)
 import Hive.Core.Piece (Piece(..))
 import Hive.Core.Player (Player(..))
