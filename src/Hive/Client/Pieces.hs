@@ -1,6 +1,8 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Hive.Client.Pieces
   ( svgAnt
@@ -18,7 +20,7 @@ import Reflex.Dom.Core
 import Hive.Client.SVG (svgAttr)
 import Hive.Client.SVG.TH (loadSVG)
 
-toSVGPath :: (PostBuild t m, DomBuilder t m) => Text -> [String] -> m ()
+toSVGPath :: MonadWidget t m => Text -> [String] -> m ()
 toSVGPath cls = svgAttr "g" attrs . traverse_ (fromPath . Text.pack)
   where
     attrs = mconcat
@@ -27,17 +29,17 @@ toSVGPath cls = svgAttr "g" attrs . traverse_ (fromPath . Text.pack)
       ]
     fromPath d = svgAttr "path" ("d" =: d) $ pure ()
 
-svgAnt :: (PostBuild t m, DomBuilder t m) => m ()
+svgAnt :: MonadWidget t m => m ()
 svgAnt = toSVGPath "ant" $(loadSVG "ant.svg")
 
-svgBee :: (PostBuild t m, DomBuilder t m) => m ()
+svgBee :: MonadWidget t m => m ()
 svgBee = toSVGPath "bee" $(loadSVG "bee.svg")
 
-svgBeetle :: (PostBuild t m, DomBuilder t m) => m ()
+svgBeetle :: MonadWidget t m => m ()
 svgBeetle = toSVGPath "beetle" $(loadSVG "beetle.svg")
 
-svgGrasshopper :: (PostBuild t m, DomBuilder t m) => m ()
+svgGrasshopper :: MonadWidget t m => m ()
 svgGrasshopper = toSVGPath "grasshopper" $(loadSVG "grasshopper.svg")
 
-svgSpider :: (PostBuild t m, DomBuilder t m) => m ()
+svgSpider :: MonadWidget t m => m ()
 svgSpider = toSVGPath "spider" $(loadSVG "spider.svg")

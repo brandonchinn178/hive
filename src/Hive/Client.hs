@@ -21,14 +21,14 @@ import Hive.Core.Player (Player(..))
 app :: JSM ()
 app = mainWidgetWithHead header body
 
-header :: (PostBuild t m, DomBuilder t m) => m ()
+header :: MonadWidget t m => m ()
 header = do
   el "title" $ text "Hive"
   case minifyCSS $ Text.pack style of
     Right css -> el "style" $ text css
     _ -> fail "Bad style.scss file"
 
-body :: (PostBuild t m, DomBuilder t m) => m ()
+body :: MonadWidget t m => m ()
 body = svgAttr "svg" ("viewBox" =: "0 0 1000 1000") $
   renderBoard
     $ putPiece (One, Bee) (0, -1)

@@ -21,7 +21,7 @@ import Hive.Core.Player (Player(..))
 -- | An SVG coordinate corresponding to pieces of height 500px.
 type SVGCoordinate = (Double, Double)
 
-renderBoard :: (PostBuild t m, DomBuilder t m) => Board -> m ()
+renderBoard :: MonadWidget t m => Board -> m ()
 renderBoard board = mapM_ (uncurry renderPiece) $ Map.toList $ normalize coordMap
   where
     coordMap = coordinateMap board
@@ -31,7 +31,7 @@ renderBoard board = mapM_ (uncurry renderPiece) $ Map.toList $ normalize coordMa
     topMost = maximum $ map snd coords
     normalize = Map.mapKeys $ \(x,y) -> (x + leftMost, y - topMost)
 
-renderPiece :: (PostBuild t m, DomBuilder t m) => Coordinate -> [PlayerPiece] -> m ()
+renderPiece :: MonadWidget t m => Coordinate -> [PlayerPiece] -> m ()
 renderPiece _ [] = error "Coordinate has no pieces"
 renderPiece coord ((player, piece):_) = svgAttr "g" attrs $ do
   hexagon
@@ -69,7 +69,7 @@ toSVGCoord (x, y) = (x' * dx + padding, y' * dyPerY + x' * dyPerX + padding)
     padding = 50
 
 -- | An SVG hexagon.
-hexagon :: (PostBuild t m, DomBuilder t m) => m ()
+hexagon :: MonadWidget t m => m ()
 hexagon = svgAttr "polygon" attrs $ pure ()
   where
     attrs = mconcat
