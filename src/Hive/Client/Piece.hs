@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Hive.Client.Pieces
+module Hive.Client.Piece
   ( svgAnt
   , svgBee
   , svgBeetle
