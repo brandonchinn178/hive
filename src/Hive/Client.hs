@@ -37,7 +37,7 @@ body = svgAttr "svg" ("viewBox" =: "0 0 1000 1000") $
   if True -- TODO: make game loop
     then do
       -- TODO: show text for player that is currently selecting
-      startBox One
+      _ <- startBox One
       -- TODO: take first click as the player's choice
       return ()
     else
