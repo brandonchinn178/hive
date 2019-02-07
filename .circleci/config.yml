@@ -14,6 +14,7 @@ aliases:
       name: Build cache key for ghc
       command: |
         FILES=(
+          snapshot.yaml
           stack.yaml
           package.yaml
           scripts/install-system-deps.sh
@@ -25,7 +26,7 @@ aliases:
       name: Build cache key for ghcjs
       command: |
         FILES=(
-          stack.yaml
+          snapshot.yaml
           ghcjs/stack.yaml
           package.yaml
           scripts/install-system-deps.sh
