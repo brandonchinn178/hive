@@ -78,6 +78,7 @@ aliases:
     run:
       name: Spin up remote build server
       command: |
+        echo 'Are you sure?' && exit 1
         terraform init
         terraform apply --auto-approve
         REMOTE_IP=$(terraform output ip)
@@ -227,9 +228,11 @@ workflows:
       - build-ghc:
           requires:
             - prebuild
-      - build-ghcjs:
-          requires:
-            - prebuild
+      ## Avoid accidentally spinning up EC2 instances unless
+      ## we actually want to test
+      # - build-ghcjs:
+      #     requires:
+      #       - prebuild
       - lint:
           requires:
             - build-ghc
